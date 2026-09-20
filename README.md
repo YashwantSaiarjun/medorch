@@ -21,7 +21,71 @@ actually execute and which knowledge base may actually be queried.
 
 ## 2. Problem Statement
 
-Naively bolting RAG onto an LLM router creates a real risk: if the LLM
+Problem
+
+Healthcare organizations may have multiple AI-powered knowledge systems serving different domains.
+
+For example:
+
+Clinical Knowledge
+Healthcare Operations
+Insurance
+Patient Services
+Pharmacy
+Billing
+
+A centralized AI interface may need to route a user's request to the appropriate specialized agent.
+
+However, simply routing requests to agents creates important security questions:
+
+Who is allowed to access each agent?
+How can different knowledge domains remain isolated?
+How can unauthorized retrieval be prevented?
+How can multiple agents collaborate without exposing protected data?
+How can agent decisions and access attempts be audited?
+
+MedOrch explores these problems through a secure multi-agent architecture.
+
+4. Your solution
+MedOrch
+
+A role-aware multi-agent healthcare AI orchestration platform with isolated knowledge domains.
+
+It consists of:
+
+Orchestrator Agent
+
+Responsible for:
+
+Understanding user intent
+Identifying relevant domain(s)
+Selecting specialized agents
+Coordinating multi-agent requests
+Aggregating authorized responses
+Policy Engine
+
+Responsible for:
+
+RBAC
+Agent-level authorization
+Least-privilege access
+Blocking unauthorized agent execution
+Clinical Agent
+
+Responsible for:
+
+Clinical knowledge
+Clinical guidelines
+Procedures
+Synthetic medical information
+Operations Agent
+
+Responsible for:
+
+Hospital workflows
+Admission processes
+Insurance workflows
+Administrative proceduresNaively bolting RAG onto an LLM router creates a real risk: if the LLM
 alone decides "this looks like a clinical question, let me fetch clinical
 data," then a prompt injection, a hallucination, or a bug can leak
 sensitive domain data to an unauthorized user. MedOrch solves this by
@@ -329,3 +393,8 @@ is **not** intended for, and must not be used for, clinical
 decision-making, diagnosis, treatment planning, or any form of real
 patient care. It does not process real patient data (PHI) and is not
 represented as HIPAA compliant.
+
+
+
+
+
