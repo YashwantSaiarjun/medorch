@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: medorch-postgres
+    environment:
+      POSTGRES_USER: medorch
+      POSTGRES_PASSWORD: medorch
+      POSTGRES_DB: medorch
+    ports:
+      - "5432:5432"
+    volumes:
+      - medorch_pgdata:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medorch -d medorch"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: medorch-api
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://medorch:medorch@postgres:5432/medorch
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: medorch-ui
+    environment:
+      MEDORCH_API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+
+volumes:
+  medorch_pgdata:
