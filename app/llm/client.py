@@ -42,6 +42,8 @@ def call_llm(system_prompt: str, user_prompt: str, max_tokens: int = 600) -> str
         return _call_anthropic(system_prompt, user_prompt, max_tokens, settings)
     elif settings.llm_provider == "openai":
         return _call_openai(system_prompt, user_prompt, max_tokens, settings)
+    elif settings.llm_provider == "groq":
+        return _call_groq(system_prompt, user_prompt, max_tokens, settings)
     else:
         raise LLMUnavailableError(f"Unsupported LLM_PROVIDER: {settings.llm_provider}")
 
@@ -63,6 +65,29 @@ def _call_openai(system_prompt: str, user_prompt: str, max_tokens: int, settings
     from openai import OpenAI
 
     client = OpenAI(api_key=settings.llm_api_key)
+    response = client.chat.completions.create(
+        model=settings.llm_model,
+        max_tokens=max_tokens,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+    )
+    return response.choices[0].message.content or ""
+
+
+def _call_groq(system_prompt: str, user_prompt: str, max_tokens: int, settings) -> str:
+    """
+    Groq (https://groq.com) exposes a free-tier, OpenAI-compatible chat
+    completions API, so we reuse the `openai` SDK pointed at Groq's base
+    URL instead of adding a new dependency. Get a free key at
+    console.groq.com/keys and set LLM_PROVIDER=groq, LLM_API_KEY=<key>,
+    LLM_MODEL=llama-3.3-70b-versatile (or another model from
+    console.groq.com/docs/models).
+    """
+    from openai import OpenAI
+
+    client = OpenAI(api_key=settings.llm_api_key, base_url="https://api.groq.com/openai/v1")
     response = client.chat.completions.create(
         model=settings.llm_model,
         max_tokens=max_tokens,

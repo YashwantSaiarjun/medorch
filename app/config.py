@@ -13,6 +13,12 @@ from functools import lru_cache
 from pydantic import BaseModel, ConfigDict
 
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 class Settings(BaseModel):
     model_config = ConfigDict(frozen=True)
 
