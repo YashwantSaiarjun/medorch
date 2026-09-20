@@ -21,7 +21,6 @@ actually execute and which knowledge base may actually be queried.
 
 ## 2. Problem Statement
 
-Problem
 
 Healthcare organizations may have multiple AI-powered knowledge systems serving different domains.
 
@@ -46,7 +45,8 @@ How can agent decisions and access attempts be audited?
 
 MedOrch explores these problems through a secure multi-agent architecture.
 
-4. Your solution
+Your solution:
+
 MedOrch
 
 A role-aware multi-agent healthcare AI orchestration platform with isolated knowledge domains.
