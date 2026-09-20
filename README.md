@@ -57,6 +57,30 @@ User ─► FastAPI /chat ─► Orchestrator (LangGraph)
                                           audit_log ─► response
 ```
 
+
+User
+  ↓
+API / UI
+  ↓
+Orchestrator
+  ↓
+Intent Detection
+  ↓
+Policy Engine / RBAC
+  ↓
+ ┌──────────────┬──────────────┐
+ ↓              ↓
+Agent A        Agent B
+Clinical       Operations
+ ↓              ↓
+KB A           KB B
+ ↓              ↓
+Vector DB A    Vector DB B
+ └───────┬──────┘
+         ↓
+   Response Aggregator
+         ↓
+      Audit Log
 ## 4. Security Model
 
 - **RBAC** enforced by a centralized, deterministic policy engine
