@@ -1,400 +1,1242 @@
-# MedOrch — Secure Multi-Agent Healthcare Orchestration Platform
+# MedOrch — Secure Multi-Agent Healthcare AI Orchestration Platform
 
-> **Healthcare disclaimer**: MedOrch is a technical proof-of-concept that
-> demonstrates secure, role-aware multi-agent orchestration architecture.
-> **All knowledge base content is synthetic/fictional.** MedOrch does not
-> process real patient data (PHI), is **not** a clinical decision-support
-> tool, and must not be used to guide real patient care. See
-> [Security Considerations](#17-security-considerations) for what would be
-> required for a production healthcare deployment.
+> **A role-aware, multi-agent healthcare AI proof-of-concept demonstrating secure agent routing, RBAC, isolated knowledge bases, RAG, multi-agent orchestration, and auditability.**
+
+> ⚠️ **Healthcare Disclaimer:** MedOrch is a technical proof-of-concept. All healthcare knowledge used in this project is synthetic and fictional. The system does not process real patient data (PHI), is not a clinical decision-support system, and must not be used for diagnosis, treatment, or real patient care.
 
 ---
 
-## 1. Project Overview
+## 📌 Overview
 
-MedOrch is a proof-of-concept multi-agent AI platform for healthcare that
-shows how to build a system where **the LLM is never the final authority
-on access control**. A central orchestrator (built as a LangGraph state
-machine) classifies user requests, but a separate, deterministic policy
-engine — plain Python code — decides which specialized agent(s) may
-actually execute and which knowledge base may actually be queried.
+**MedOrch** is an end-to-end multi-agent AI orchestration platform designed to demonstrate how multiple specialized AI agents can collaborate while maintaining **role-based access control and knowledge isolation**.
 
-## 2. Problem Statement
+The system consists of:
 
+* 🧠 A central **Orchestrator Agent**
+* 🩺 A **Clinical Knowledge Agent**
+* 🏥 A **Healthcare Operations Agent**
+* 🔐 A deterministic **RBAC / Policy Engine**
+* 📚 Independent RAG pipelines and knowledge bases
+* 🔎 Intent-based agent routing
+* 🔗 Multi-agent request orchestration
+* 📋 Structured audit logging
+* 🧪 Automated security and routing tests
 
-Healthcare organizations may have multiple AI-powered knowledge systems serving different domains.
+The central design principle is:
 
-For example:
+> **The LLM can determine which agent is relevant, but it never makes the final authorization decision.**
 
-Clinical Knowledge
-Healthcare Operations
-Insurance
-Patient Services
-Pharmacy
-Billing
+Authorization is performed by deterministic application logic **before** an agent is executed or its knowledge base is queried.
 
-A centralized AI interface may need to route a user's request to the appropriate specialized agent.
+---
 
-However, simply routing requests to agents creates important security questions:
+# 🎯 Problem Statement
 
-Who is allowed to access each agent?
-How can different knowledge domains remain isolated?
-How can unauthorized retrieval be prevented?
-How can multiple agents collaborate without exposing protected data?
-How can agent decisions and access attempts be audited?
+Healthcare organizations may have multiple AI-powered knowledge systems serving different domains, such as:
 
-MedOrch explores these problems through a secure multi-agent architecture.
+* Clinical knowledge
+* Healthcare operations
+* Insurance
+* Patient services
+* Pharmacy
+* Billing
 
-Your solution:
+A centralized AI interface could route user requests to the appropriate specialized agent.
 
-MedOrch
+However, this introduces important security and architecture questions:
 
-A role-aware multi-agent healthcare AI orchestration platform with isolated knowledge domains.
+* Which users are allowed to access each agent?
+* How can different knowledge domains remain isolated?
+* How can unauthorized retrieval be prevented?
+* How can multiple agents collaborate without exposing protected data?
+* How can routing and authorization decisions be audited?
+* What happens when a user requests information spanning multiple domains?
 
-It consists of:
+MedOrch explores these challenges through a secure multi-agent architecture.
 
-Orchestrator Agent
+---
 
-Responsible for:
+# 💡 Solution
 
-Understanding user intent
-Identifying relevant domain(s)
-Selecting specialized agents
-Coordinating multi-agent requests
-Aggregating authorized responses
-Policy Engine
+MedOrch separates **intent detection**, **authorization**, **agent execution**, and **knowledge retrieval** into independent responsibilities.
 
-Responsible for:
-
-RBAC
-Agent-level authorization
-Least-privilege access
-Blocking unauthorized agent execution
-Clinical Agent
-
-Responsible for:
-
-Clinical knowledge
-Clinical guidelines
-Procedures
-Synthetic medical information
-Operations Agent
-
-Responsible for:
-
-Hospital workflows
-Admission processes
-Insurance workflows
-Administrative proceduresNaively bolting RAG onto an LLM router creates a real risk: if the LLM
-alone decides "this looks like a clinical question, let me fetch clinical
-data," then a prompt injection, a hallucination, or a bug can leak
-sensitive domain data to an unauthorized user. MedOrch solves this by
-putting a deterministic authorization gate **between** intent detection
-and knowledge retrieval, and by giving every knowledge domain its own
-isolated agent, retriever, and knowledge base.
-
-## 3. Architecture
-
-See [`architecture/architecture.md`](architecture/architecture.md) for the
-full write-up (component architecture, threat model, trust boundaries,
-data isolation strategy, audit architecture). Summary diagram:
-
-```
-User ─► FastAPI /chat ─► Orchestrator (LangGraph)
-                              │
-                    identify_role ─► analyze_intent (LLM, untrusted)
-                              │
-                    authorize (deterministic Policy Engine)
-                         │                  │
-                      DENIED             ALLOWED
-                         │                  │
-                  access_denied      execute_agents
+```text
+                         ┌──────────────────┐
+                         │       User       │
+                         └────────┬─────────┘
+                                  │
+                                  ▼
+                         ┌──────────────────┐
+                         │  FastAPI / UI    │
+                         └────────┬─────────┘
+                                  │
+                                  ▼
+                    ┌──────────────────────────┐
+                    │    MedOrch Orchestrator  │
+                    │       LangGraph          │
+                    └────────────┬─────────────┘
+                                 │
+                                 ▼
+                    ┌──────────────────────────┐
+                    │     Intent Detection     │
+                    │          LLM             │
+                    └────────────┬─────────────┘
+                                 │
+                                 ▼
+                    ┌──────────────────────────┐
+                    │   Policy Engine / RBAC   │
+                    │    Deterministic Code    │
+                    └────────────┬─────────────┘
+                                 │
+                    ┌────────────┴────────────┐
+                    │                         │
+                 DENIED                    ALLOWED
+                    │                         │
+                    ▼                         ▼
+              Access Denied          Specialized Agent
                                              │
-                              ┌──────────────┴──────────────┐
-                              ▼                              ▼
-                      Agent A (Clinical)             Agent B (Operations)
-                      ClinicalRetriever               OperationsRetriever
-                      clinical_kb                      operations_kb
-                              │                              │
-                              └──────────► aggregate_results ◄┘
+                                  ┌──────────┴──────────┐
+                                  │                     │
+                                  ▼                     ▼
+                           Clinical Agent       Operations Agent
+                                  │                     │
+                                  ▼                     ▼
+                           Clinical KB          Operations KB
+                                  │                     │
+                                  └──────────┬──────────┘
                                              │
-                                          audit_log ─► response
+                                             ▼
+                                     Result Aggregator
+                                             │
+                                             ▼
+                                        Audit Log
+                                             │
+                                             ▼
+                                       Final Response
 ```
 
+---
 
+# 🏗️ Architecture
+
+The complete architecture and threat model are available in:
+
+[`architecture/architecture.md`](architecture/architecture.md)
+
+### High-Level Flow
+
+```text
 User
   ↓
 API / UI
   ↓
-Orchestrator
+MedOrch Orchestrator
   ↓
 Intent Detection
   ↓
 Policy Engine / RBAC
   ↓
- ┌──────────────┬──────────────┐
- ↓              ↓
-Agent A        Agent B
-Clinical       Operations
- ↓              ↓
-KB A           KB B
- ↓              ↓
-Vector DB A    Vector DB B
- └───────┬──────┘
-         ↓
-   Response Aggregator
-         ↓
-      Audit Log
-## 4. Security Model
-
-- **RBAC** enforced by a centralized, deterministic policy engine
-  (`app/auth/policy_engine.py`) — not by prompt instructions.
-- **Authorization before retrieval**: a denied agent's retriever is never
-  constructed and its knowledge base is never queried. Data is never
-  fetched and then filtered after the fact.
-- **Agent + knowledge-base isolation**: each agent is hard-bound to its
-  own retriever and namespace; see [Knowledge Isolation Model](#7-knowledge-isolation-model).
-- **Auditability**: every request produces a structured audit record
-  capturing the routing, authorization, and execution outcome.
-- **No secrets in source**: all credentials come from environment
-  variables; `.env.example` ships placeholders only.
-
-Full threat model and trust boundaries: see
-[`architecture/architecture.md`](architecture/architecture.md).
-
-## 5. Multi-Agent Workflow
-
-The orchestrator is implemented as a LangGraph state machine
-(`app/graph/workflow.py`) with these nodes:
-
-```
-identify_role → analyze_intent → authorize ─┬─► access_denied ─► audit_log ─► END
-                                              └─► execute_agents → aggregate_results → audit_log → END
+ ┌───────────────────────┐
+ │                       │
+ ▼                       ▼
+DENIED                 ALLOWED
+ │                       │
+ ▼                       ▼
+Access Denied       Specialized Agent
+                         │
+                ┌────────┴────────┐
+                ▼                 ▼
+          Clinical Agent   Operations Agent
+                │                 │
+                ▼                 ▼
+          Clinical KB      Operations KB
+                │                 │
+                └────────┬────────┘
+                         ▼
+                 Response Aggregator
+                         │
+                         ▼
+                    Audit Logger
+                         │
+                         ▼
+                    Final Response
 ```
 
-It supports single-agent requests, multi-agent requests (independently
-authorizing and invoking each requested agent), unauthorized requests,
-missing-role prompts, unknown intent, and agent/retrieval failures.
+---
 
-## 6. RBAC Model
+# 🔐 Core Security Principle
 
-| Role | Agent A (Clinical) | Agent B (Operations) |
-|---|---|---|
-| CLINICIAN | ✅ ALLOWED | ❌ DENIED |
-| OPERATIONS | ❌ DENIED | ✅ ALLOWED |
-| ADMIN | ✅ ALLOWED | ✅ ALLOWED |
-| RESTRICTED | ❌ DENIED | ❌ DENIED |
+A critical design decision in MedOrch is:
 
-This matrix lives in exactly one place:
-`app/auth/policy_engine.py::_PERMISSION_MATRIX`.
+> **Authorization is performed before agent execution and before knowledge retrieval.**
 
-## 7. Knowledge Isolation Model
+The LLM is responsible for **intent detection**, not authorization.
 
-```
-      MedOrch (never touches a vector store directly)
-         │
-   ------------------------
-   │                      │
-Agent A                Agent B
-   │                      │
-ClinicalRetriever    OperationsRetriever
-(clinical_kb only)   (operations_kb only)
-   │                      │
-clinical_kb            operations_kb
+### Incorrect approach
+
+```text
+User
+ ↓
+LLM
+ ↓
+Retrieve from all relevant sources
+ ↓
+Filter unauthorized information
 ```
 
-Enforced at three layers (application, retriever, storage) — see
-[`architecture/architecture.md §3`](architecture/architecture.md#3-agent-boundaries).
-Proven by `tests/test_isolation.py`.
+This can expose protected information during retrieval.
 
-## 8. Technology Stack
+### MedOrch approach
 
-- Python 3.11+
-- FastAPI + Pydantic
-- LangGraph (orchestration state machine)
-- PostgreSQL + pgvector (production vector store) — with an in-memory
-  vector store fallback for zero-infra local dev/CI, behind the same
-  interface (`app/rag/vector_store.py`)
-- Streamlit (UI)
-- Docker / Docker Compose
-- pytest
-
-## 9. Project Structure
-
+```text
+User
+ ↓
+Intent Detection
+ ↓
+Policy Engine
+ ↓
+Authorization
+ ↓
+Agent Execution
+ ↓
+Knowledge Retrieval
+ ↓
+Response
 ```
+
+For example:
+
+```text
+User Role: OPERATIONS
+
+Request:
+"What is the synthetic hypertension treatment protocol?"
+
+                ↓
+
+Intent Detection
+        ↓
+Clinical Agent
+        ↓
+Policy Engine
+        ↓
+OPERATIONS → CLINICAL = DENIED
+        ↓
+Clinical Agent NOT executed
+        ↓
+Clinical KB NOT queried
+        ↓
+Access Denied
+```
+
+The system does **not** fetch protected data and filter it afterward.
+
+---
+
+# 🤖 Specialized Agents
+
+## Agent A — Clinical Knowledge Agent
+
+The Clinical Agent manages the clinical knowledge domain.
+
+Its synthetic knowledge base contains examples such as:
+
+* Clinical guidelines
+* Disease information
+* Clinical procedures
+* Treatment protocols
+* Synthetic medication information
+
+Architecture:
+
+```text
+Clinical Agent
+      ↓
+Clinical Retriever
+      ↓
+clinical_kb
+      ↓
+Clinical Documents
+```
+
+The Clinical Agent has no direct access to the Operations knowledge base.
+
+---
+
+## Agent B — Healthcare Operations Agent
+
+The Operations Agent manages healthcare operational knowledge.
+
+Its synthetic knowledge base contains examples such as:
+
+* Hospital workflows
+* Patient admission procedures
+* Insurance workflows
+* Billing policies
+* Administrative processes
+
+Architecture:
+
+```text
+Operations Agent
+      ↓
+Operations Retriever
+      ↓
+operations_kb
+      ↓
+Operations Documents
+```
+
+The Operations Agent has no direct access to the Clinical knowledge base.
+
+---
+
+# 🔒 Knowledge Isolation
+
+MedOrch maintains separate knowledge boundaries for each specialized agent.
+
+```text
+                  MedOrch
+              ───────────────
+               Never directly
+              accesses vector DBs
+                    │
+           ┌────────┴────────┐
+           │                 │
+           ▼                 ▼
+      Clinical Agent    Operations Agent
+           │                 │
+           ▼                 ▼
+ Clinical Retriever    Operations Retriever
+           │                 │
+           ▼                 ▼
+     clinical_kb        operations_kb
+```
+
+Isolation is enforced at multiple layers:
+
+1. **Application layer**
+2. **Agent layer**
+3. **Retriever layer**
+4. **Knowledge-store layer**
+
+The Orchestrator does not directly query the vector stores.
+
+Each specialized agent is responsible for accessing only its own knowledge domain.
+
+Automated isolation tests are implemented in:
+
+```text
+tests/test_isolation.py
+```
+
+---
+
+# 🔑 RBAC Model
+
+MedOrch uses a centralized deterministic permission matrix.
+
+| Role           | Clinical Agent | Operations Agent |
+| -------------- | :------------: | :--------------: |
+| **CLINICIAN**  |    ✅ Allowed   |     ❌ Denied     |
+| **OPERATIONS** |    ❌ Denied    |     ✅ Allowed    |
+| **ADMIN**      |    ✅ Allowed   |     ✅ Allowed    |
+| **RESTRICTED** |    ❌ Denied    |     ❌ Denied     |
+
+The permission matrix is maintained in:
+
+```text
+app/auth/policy_engine.py
+```
+
+### Important
+
+The LLM cannot modify or override these permissions.
+
+The LLM may say:
+
+> "This request appears to require the Clinical Agent."
+
+The Policy Engine independently determines:
+
+> "Is this user's role authorized to access the Clinical Agent?"
+
+---
+
+# 🔄 Multi-Agent Orchestration
+
+MedOrch supports requests that require multiple knowledge domains.
+
+Example:
+
+> "Give me the synthetic clinical hypertension protocol and the corresponding hospital admission workflow."
+
+The Orchestrator identifies:
+
+```text
+Clinical requirement
+        ↓
+Clinical Agent
+
+Operations requirement
+        ↓
+Operations Agent
+```
+
+The Policy Engine independently authorizes each agent.
+
+```text
+                    User Request
+                         │
+                         ▼
+                    Orchestrator
+                         │
+              ┌──────────┴──────────┐
+              ▼                     ▼
+        Clinical Intent       Operations Intent
+              │                     │
+              ▼                     ▼
+        Policy Check          Policy Check
+              │                     │
+              ▼                     ▼
+       Clinical Agent       Operations Agent
+              │                     │
+              ▼                     ▼
+         Clinical KB         Operations KB
+              │                     │
+              └──────────┬──────────┘
+                         ▼
+                  Result Aggregator
+                         │
+                         ▼
+                   Final Response
+```
+
+If the user is authorized for only one domain, only that domain executes.
+
+---
+
+# 🧠 LangGraph Workflow
+
+The orchestration workflow is implemented using **LangGraph**.
+
+```text
+identify_role
+      ↓
+analyze_intent
+      ↓
+authorize
+   ┌──┴───────────────┐
+   │                  │
+DENIED              ALLOWED
+   │                  │
+   ▼                  ▼
+access_denied    execute_agents
+   │                  │
+   │                  ▼
+   │           aggregate_results
+   │                  │
+   └────────┬─────────┘
+            ▼
+        audit_log
+            ↓
+           END
+```
+
+The workflow supports:
+
+* Single-agent requests
+* Multi-agent requests
+* Unauthorized requests
+* Missing-role scenarios
+* Unknown intents
+* Agent failures
+* Retrieval failures
+
+---
+
+# 📋 Auditability
+
+Every request generates a structured audit record.
+
+Example:
+
+```json
+{
+  "request_id": "req-001",
+  "user_id": "user-001",
+  "role": "OPERATIONS",
+  "request": "What is the synthetic hypertension treatment protocol?",
+  "requested_agents": ["clinical"],
+  "authorized_agents": [],
+  "denied_agents": ["clinical"],
+  "executed_agents": [],
+  "status": "DENIED"
+}
+```
+
+The audit layer records information such as:
+
+* Request ID
+* User ID
+* User role
+* Original request
+* Detected intent
+* Requested agents
+* Authorized agents
+* Denied agents
+* Executed agents
+* Execution status
+* Timestamp
+
+Sensitive information should not be unnecessarily written to logs.
+
+---
+
+# 🧪 Demo Scenarios
+
+The following scenarios demonstrate the main capabilities of the platform.
+
+## Scenario 1 — Authorized Clinical Access
+
+**Role**
+
+```text
+CLINICIAN
+```
+
+**Request**
+
+```text
+What are the synthetic clinical guidelines for hypertension management?
+```
+
+**Expected**
+
+```text
+Intent → Clinical
+Authorization → ALLOWED
+Agent → Clinical Agent
+Result → Successful response
+```
+
+---
+
+## Scenario 2 — Authorized Operations Access
+
+**Role**
+
+```text
+OPERATIONS
+```
+
+**Request**
+
+```text
+What is the synthetic hospital admission workflow?
+```
+
+**Expected**
+
+```text
+Intent → Operations
+Authorization → ALLOWED
+Agent → Operations Agent
+Result → Successful response
+```
+
+---
+
+## Scenario 3 — Unauthorized Clinical Access
+
+**Role**
+
+```text
+OPERATIONS
+```
+
+**Request**
+
+```text
+What is the synthetic clinical protocol for hypertension?
+```
+
+**Expected**
+
+```text
+Intent → Clinical
+Authorization → DENIED
+Agent → Clinical Agent NOT executed
+Knowledge Base → Clinical KB NOT queried
+Result → Access denied
+```
+
+---
+
+## Scenario 4 — Multi-Agent Request
+
+**Role**
+
+```text
+ADMIN
+```
+
+**Request**
+
+```text
+Give me the synthetic clinical hypertension protocol
+and the corresponding hospital admission workflow.
+```
+
+**Expected**
+
+```text
+Clinical Agent → ALLOWED
+Operations Agent → ALLOWED
+
+        ↓
+
+Both agents execute independently
+
+        ↓
+
+Results aggregated
+
+        ↓
+
+Final response returned
+```
+
+---
+
+## Scenario 5 — Restricted User
+
+**Role**
+
+```text
+RESTRICTED
+```
+
+**Request**
+
+```text
+Give me information about hypertension.
+```
+
+**Expected**
+
+```text
+Authorization → DENIED
+Clinical Agent → NOT executed
+Operations Agent → NOT executed
+```
+
+---
+
+# 🧰 Technology Stack
+
+### AI / Agent Architecture
+
+* Python 3.11+
+* LangGraph
+* LLM-based intent classification
+* RAG
+* Embeddings
+
+### Backend
+
+* FastAPI
+* Pydantic
+
+### Data & Retrieval
+
+* PostgreSQL
+* pgvector
+* Isolated knowledge bases
+* Synthetic JSON knowledge documents
+* In-memory vector-store fallback for local development and testing
+
+### Frontend
+
+* Streamlit
+
+### Infrastructure
+
+* Docker
+* Docker Compose
+
+### Testing
+
+* pytest
+
+---
+
+# 📁 Project Structure
+
+```text
 medorch/
+│
 ├── app/
-│   ├── api/routes.py               # FastAPI endpoints
-│   ├── agents/                     # orchestrator, Agent A, Agent B, intent
-│   ├── auth/                       # RBAC models + deterministic policy engine
-│   ├── rag/                        # embeddings, vector store, retrievers, kb loader
-│   ├── audit/                      # audit record model + service
-│   ├── graph/                      # LangGraph workflow + state
-│   ├── llm/                        # thin LLM client wrapper
+│   ├── api/
+│   │   └── routes.py
+│   │
+│   ├── agents/
+│   │   ├── orchestrator.py
+│   │   ├── clinical_agent.py
+│   │   ├── operations_agent.py
+│   │   └── intent.py
+│   │
+│   ├── auth/
+│   │   ├── models.py
+│   │   └── policy_engine.py
+│   │
+│   ├── rag/
+│   │   ├── embeddings.py
+│   │   ├── vector_store.py
+│   │   ├── clinical_retriever.py
+│   │   ├── operations_retriever.py
+│   │   └── kb_loader.py
+│   │
+│   ├── audit/
+│   │   ├── models.py
+│   │   └── service.py
+│   │
+│   ├── graph/
+│   │   ├── workflow.py
+│   │   └── state.py
+│   │
+│   ├── llm/
+│   │   └── client.py
+│   │
 │   ├── config.py
 │   └── main.py
-├── data/{clinical,operations}/documents.json   # synthetic knowledge bases
-├── tests/                          # test_auth, test_routing, test_isolation, test_rag
-├── ui/streamlit_app.py
-├── architecture/architecture.md
-├── scripts/{init_db.sql,load_kb.py}
-├── docker-compose.yml, Dockerfile, Dockerfile.ui
-├── requirements.txt, .env.example, .gitignore
+│
+├── data/
+│   ├── clinical/
+│   │   └── documents.json
+│   │
+│   └── operations/
+│       └── documents.json
+│
+├── tests/
+│   ├── test_auth.py
+│   ├── test_routing.py
+│   ├── test_isolation.py
+│   └── test_rag.py
+│
+├── ui/
+│   └── streamlit_app.py
+│
+├── architecture/
+│   └── architecture.md
+│
+├── scripts/
+│   ├── init_db.sql
+│   └── load_kb.py
+│
+├── Dockerfile
+├── Dockerfile.ui
+├── docker-compose.yml
+├── requirements.txt
+├── .env.example
+├── .gitignore
 └── README.md
 ```
 
-## 10. Setup Instructions
+---
 
-### Option A — quick local run (no Docker, no Postgres)
+# 🚀 Getting Started
+
+## Prerequisites
+
+* Python 3.11+
+* Docker Desktop — optional for local non-Docker execution
+* An LLM API key — optional
+* Git
+
+---
+
+## Option 1 — Quick Local Run
+
+Create a virtual environment:
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env    # optionally set LLM_API_KEY; leave blank to run fully offline
+python3 -m venv .venv
 ```
 
-Without `DATABASE_URL` set, MedOrch automatically uses the in-memory
-vector store — nothing else to configure.
+Activate it:
 
-### Option B — full stack with Docker
+### Linux / macOS
 
 ```bash
-cp .env.example .env    # optionally set LLM_API_KEY
+source .venv/bin/activate
+```
+
+### Windows
+
+```powershell
+.venv\Scripts\activate
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Create your environment file:
+
+```bash
+cp .env.example .env
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+The project can run without an external LLM API using its deterministic fallback mode.
+
+Without `DATABASE_URL`, the application uses the in-memory vector store.
+
+---
+
+# 🐳 Option 2 — Run with Docker
+
+Create the environment file:
+
+```bash
+cp .env.example .env
+```
+
+Then start the complete stack:
+
+```bash
 docker compose up --build
 ```
 
-## 11. Docker Instructions
+This starts:
 
-`docker compose up --build` starts three services:
+| Service    | Purpose               |   Port |
+| ---------- | --------------------- | -----: |
+| `postgres` | PostgreSQL + pgvector | `5432` |
+| `api`      | FastAPI backend       | `8000` |
+| `ui`       | Streamlit application | `8501` |
 
-- `postgres` — Postgres + pgvector, initialized with `scripts/init_db.sql`
-  (creates the `clinical_kb` and `operations_kb` tables).
-- `api` — the FastAPI backend on `:8000`.
-- `ui` — the Streamlit UI on `:8501`, pointed at the `api` service.
+Stop the application:
 
-Stop with `docker compose down` (add `-v` to also drop the Postgres
-volume).
+```bash
+docker compose down
+```
 
-## 12. Environment Configuration
+To also remove the PostgreSQL volume:
 
-See [`.env.example`](.env.example) for the full list. Key variables:
+```bash
+docker compose down -v
+```
 
-| Variable | Purpose |
-|---|---|
-| `LLM_PROVIDER` | `anthropic` or `openai` |
-| `LLM_API_KEY` | Leave blank to run fully offline with deterministic heuristics |
-| `LLM_MODEL` | Model name for the configured provider |
-| `DISABLE_LLM` | Force-disable LLM calls even if a key is set |
-| `DATABASE_URL` | Set to use Postgres/pgvector; unset = in-memory store |
-| `RETRIEVAL_TOP_K` | Number of documents each agent retrieves per query |
+---
 
-## 13. Running the API
+# ⚙️ Environment Configuration
+
+Configuration is available in:
+
+```text
+.env.example
+```
+
+Important variables:
+
+| Variable          | Description                                  |
+| ----------------- | -------------------------------------------- |
+| `LLM_PROVIDER`    | LLM provider such as `openai` or `anthropic` |
+| `LLM_API_KEY`     | API key for the configured provider          |
+| `LLM_MODEL`       | Model name                                   |
+| `DISABLE_LLM`     | Disables external LLM calls                  |
+| `DATABASE_URL`    | PostgreSQL connection string                 |
+| `RETRIEVAL_TOP_K` | Number of retrieved documents                |
+
+Example:
+
+```env
+LLM_PROVIDER=openai
+LLM_API_KEY=
+LLM_MODEL=
+DISABLE_LLM=true
+DATABASE_URL=
+RETRIEVAL_TOP_K=3
+```
+
+**Never commit `.env` or real API keys to GitHub.**
+
+---
+
+# 🔌 Running the API
+
+Start FastAPI:
 
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
 
-Interactive docs at `http://localhost:8000/docs`.
+API:
 
-## 14. Running Streamlit
+```text
+http://localhost:8000
+```
+
+Interactive API documentation:
+
+```text
+http://localhost:8000/docs
+```
+
+---
+
+# 🖥️ Running the Streamlit UI
+
+Start the frontend:
 
 ```bash
 streamlit run ui/streamlit_app.py
 ```
 
-Set `MEDORCH_API_URL` if the API isn't on `http://localhost:8000`.
+The UI can be accessed through the Streamlit URL displayed in the terminal.
 
-## 15. Test Instructions
+If the API is running on another address, configure:
+
+```text
+MEDORCH_API_URL
+```
+
+---
+
+# 🧪 Testing
+
+Run the complete test suite:
 
 ```bash
 DISABLE_LLM=true pytest tests/ -v
 ```
 
-`DISABLE_LLM=true` makes the suite fully deterministic and offline (no
-API key required); the policy engine and knowledge isolation are always
-deterministic regardless of this flag. 26 tests covering RBAC (all 4
-roles × both agents), knowledge isolation, orchestration/routing
-(including every demo scenario below), and RAG-layer behavior.
+The deterministic test mode does not require an external LLM API key.
 
-## 16. Example Requests
+The test suite covers:
+
+* RBAC
+* All supported roles
+* Agent authorization
+* Agent routing
+* Knowledge isolation
+* Unauthorized execution prevention
+* RAG behavior
+* Single-agent workflows
+* Multi-agent workflows
+* Demo scenarios
+
+---
+
+# 🔍 Example API Request
 
 ```bash
 curl -X POST http://localhost:8000/chat \
   -H "Content-Type: application/json" \
-  -d '{"user_id":"user-001","role":"CLINICIAN","message":"What are the synthetic clinical guidelines for hypertension management?"}'
+  -d '{
+    "user_id": "user-001",
+    "role": "CLINICIAN",
+    "message": "What are the synthetic clinical guidelines for hypertension management?"
+  }'
 ```
 
-### Demo Scenarios
+The response includes structured information such as:
 
-| # | Role | Question | Expected |
-|---|---|---|---|
-| 1 | CLINICIAN | "What are the synthetic clinical guidelines for hypertension management?" | Agent A executes |
-| 2 | OPERATIONS | "What is the synthetic hospital admission workflow?" | Agent B executes |
-| 3 | OPERATIONS | "What is the synthetic clinical protocol for hypertension?" | **Access denied**; Agent A does not execute |
-| 4 | ADMIN | "Give me the synthetic clinical hypertension protocol and the corresponding hospital admission workflow." | Agent A **and** Agent B execute |
-| 5 | RESTRICTED | "Give me information about hypertension." | **Access denied**; no agent executes |
+```text
+Final response
+Request ID
+Detected agents
+Authorized agents
+Citations
+Execution status
+```
 
-Each is covered by an automated regression test in `tests/test_routing.py`.
+---
 
-## 17. Security Considerations
+# 🛡️ Security Design
 
-- Authorization is evaluated **before** any agent is invoked or any
-  knowledge base is queried (never "fetch then filter").
-- The LLM's intent output is treated as untrusted input to the policy
-  engine, never as an authorization decision itself.
-- No PHI or real patient data is present anywhere in this repository.
-- No secrets are hard-coded; see `.env.example`.
-- The in-memory session/role store in `app/api/routes.py` is POC-scope
-  only (no persistence, no real authentication) — see Limitations.
+MedOrch demonstrates several security principles relevant to multi-agent AI systems.
 
-**This POC is not HIPAA compliant and makes no such claim.** A production
-healthcare deployment would additionally require, at minimum:
+### 1. Authorization Before Retrieval
 
-- Real authentication/identity provider (OAuth2/OIDC/SSO) instead of a
-  client-supplied `role` field, plus MFA for privileged roles.
-- Encryption at rest and in transit for all data stores, and a signed/
-  tamper-evident audit log (not a plain JSON-lines file).
-- A Business Associate Agreement (BAA) with any third-party LLM provider,
-  and a private/VPC-isolated model deployment if PHI is ever involved.
-- Formal access reviews, session expiry, rate limiting, and centralized
-  secrets management (e.g. a vault service).
-- A clinical safety/compliance review before any output is used to
-  inform real care decisions — this system is explicitly not designed or
-  validated for that purpose.
+Unauthorized agents are blocked before their retrievers execute.
 
-## 18. Limitations
+```text
+Intent
+  ↓
+Authorization
+  ↓
+Agent
+  ↓
+Retriever
+  ↓
+Knowledge Base
+```
 
-- Retrieval uses a lightweight hashing-based embedding (no external
-  embedding API required) — adequate for this synthetic demo corpus, not
-  benchmarked for production-scale relevance.
-- Session/role storage is in-memory and resets on API restart.
-- No real user authentication — `role` is a client-supplied POC
-  convenience, not a security control on its own (do not deploy this
-  as-is on an untrusted network).
-- Audit log is a local file + in-memory store, not a durable/queryable
-  audit database.
+Not:
 
-## 19. Future Improvements
+```text
+Intent
+  ↓
+Retrieve Everything
+  ↓
+Filter Response
+```
 
-- Swap the hashing embedding for a real embedding model/service behind
-  the same `VectorStore` interface.
-- Add a third/fourth specialized agent to demonstrate N-way isolation.
-- Persist sessions and audit records in Postgres (`audit_logs` table is
-  already scaffolded in `scripts/init_db.sql`).
-- Add per-role rate limiting and structured request tracing (OpenTelemetry).
-- Real identity provider integration (OIDC) replacing the demo role
-  selector.
+---
 
-## 20. Healthcare Disclaimer
+### 2. Deterministic Authorization
 
-MedOrch is a technical proof-of-concept only. All clinical and
-operations content in its knowledge bases is synthetic and fictional. It
-is **not** intended for, and must not be used for, clinical
-decision-making, diagnosis, treatment planning, or any form of real
-patient care. It does not process real patient data (PHI) and is not
-represented as HIPAA compliant.
+The LLM does not determine whether a user is authorized.
 
+The Policy Engine makes that decision using application code.
 
+---
 
+### 3. Least Privilege
+
+Users receive access only to the knowledge domains required by their role.
+
+---
+
+### 4. Agent Isolation
+
+Each agent has:
+
+* Its own prompt
+* Its own retriever
+* Its own knowledge domain
+* Its own vector-store namespace/table
+
+---
+
+### 5. No Direct Vector Store Access by the Orchestrator
+
+The Orchestrator coordinates agents but does not directly retrieve knowledge.
+
+---
+
+### 6. Auditability
+
+Routing and authorization decisions are recorded for traceability.
+
+---
+
+### 7. Secret Management
+
+Credentials are provided through environment variables rather than source code.
+
+---
+
+# 🧩 Production Considerations
+
+MedOrch is a POC and is **not production-ready or HIPAA compliant**.
+
+A production healthcare implementation would require significantly stronger controls, including:
+
+### Identity & Authentication
+
+* OAuth2 / OIDC
+* Enterprise SSO
+* MFA
+* Session management
+* Identity-provider integration
+
+The current POC uses a client-provided role for demonstration purposes only.
+
+---
+
+### Data Protection
+
+* Encryption in transit
+* Encryption at rest
+* Key management
+* Secrets management
+* Network isolation
+* Private infrastructure where appropriate
+
+---
+
+### Audit & Compliance
+
+* Durable audit storage
+* Tamper-evident audit logs
+* Centralized observability
+* Access reviews
+* Compliance controls
+* Security monitoring
+
+---
+
+### AI Security
+
+A production implementation would also require controls around:
+
+* Prompt injection
+* Indirect prompt injection
+* Tool authorization
+* Data exfiltration
+* Agent-to-agent trust
+* Output validation
+* Retrieval security
+* Model access policies
+
+---
+
+### Healthcare Safety
+
+Before any healthcare AI system is used in real clinical workflows, additional:
+
+* Clinical validation
+* Safety review
+* Regulatory/compliance review
+* Human oversight
+* Risk assessment
+
+would be required.
+
+---
+
+# ⚠️ Current Limitations
+
+This project intentionally keeps several components lightweight because it is a proof-of-concept.
+
+### Embeddings
+
+The current implementation uses a lightweight hashing-based embedding approach suitable for the small synthetic demo corpus.
+
+It has not been benchmarked for production-scale retrieval relevance.
+
+### Authentication
+
+There is no real identity provider.
+
+The role is currently supplied by the client/UI and therefore should **not** be considered a production security control.
+
+### Session Management
+
+Session and role information is stored in memory and resets when the API restarts.
+
+### Audit Storage
+
+The audit log is currently local/in-memory rather than a durable enterprise audit platform.
+
+### Synthetic Data
+
+All knowledge-base content is synthetic and fictional.
+
+---
+
+# 🔮 Future Improvements
+
+Potential next steps include:
+
+* Replace demo embeddings with production embedding models
+* Add additional specialized agents
+* Introduce persistent audit storage
+* Add enterprise identity integration using OIDC
+* Add centralized secrets management
+* Add OpenTelemetry tracing
+* Add per-role rate limiting
+* Add advanced agent evaluation
+* Add prompt-injection defenses
+* Add policy-based tool authorization
+* Add human-in-the-loop approval workflows
+* Add production-grade monitoring
+* Add N-way agent isolation
+
+---
+
+# 📊 What This POC Demonstrates
+
+The project demonstrates practical concepts across several areas:
+
+| Area                           | Demonstrated |
+| ------------------------------ | ------------ |
+| Multi-Agent AI                 | ✅            |
+| LLM Orchestration              | ✅            |
+| LangGraph                      | ✅            |
+| RAG                            | ✅            |
+| RBAC                           | ✅            |
+| Least Privilege                | ✅            |
+| Agent Isolation                | ✅            |
+| Knowledge Isolation            | ✅            |
+| Authorization Before Retrieval | ✅            |
+| Multi-Agent Workflows          | ✅            |
+| Audit Logging                  | ✅            |
+| FastAPI                        | ✅            |
+| Streamlit                      | ✅            |
+| PostgreSQL / pgvector          | ✅            |
+| Docker                         | ✅            |
+| Automated Testing              | ✅            |
+
+---
+
+# 🎯 Key Architectural Takeaway
+
+The primary goal of MedOrch is not simply to demonstrate that an LLM can call multiple agents.
+
+It demonstrates how a multi-agent system can separate:
+
+```text
+                 ┌─────────────────────┐
+                 │   Intent Detection  │
+                 │        LLM          │
+                 └──────────┬──────────┘
+                            │
+                            ▼
+                 ┌─────────────────────┐
+                 │  Authorization      │
+                 │  Deterministic RBAC │
+                 └──────────┬──────────┘
+                            │
+                            ▼
+                 ┌─────────────────────┐
+                 │   Agent Execution   │
+                 └──────────┬──────────┘
+                            │
+                            ▼
+                 ┌─────────────────────┐
+                 │ Knowledge Retrieval │
+                 └──────────┬──────────┘
+                            │
+                            ▼
+                 ┌─────────────────────┐
+                 │    Audit / Trace    │
+                 └─────────────────────┘
+```
+
+This separation helps establish clear **trust boundaries, least-privilege access, and knowledge isolation** between specialized AI agents.
+
+---
+
+# ⚠️ Healthcare Disclaimer
+
+**MedOrch is a technical proof-of-concept only.**
+
+All clinical and healthcare operations content used by this project is synthetic and fictional.
+
+MedOrch:
+
+* Does not process real patient data
+* Does not contain PHI
+* Is not HIPAA compliant
+* Is not a clinical decision-support system
+* Must not be used for diagnosis
+* Must not be used for treatment planning
+* Must not be used to guide real patient care
+
+The architecture is intended to demonstrate engineering concepts around **multi-agent AI, orchestration, authorization, RAG, security boundaries, and knowledge isolation**.
+
+---
 
 
