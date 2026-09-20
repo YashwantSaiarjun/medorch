@@ -1,0 +1,44 @@
+[
+  {
+    "doc_id": "clin-001",
+    "title": "Synthetic Hypertension Management Guideline",
+    "content": "SYNTHETIC DEMO CONTENT (fictional, not real medical guidance). For adult patients with synthetic essential hypertension, the fictional demo protocol suggests a stepped approach: (1) lifestyle modification including sodium reduction and exercise, (2) first-line synthetic-thiazide-class agent 'DemoThiazide-A' at 12.5-25mg daily if blood pressure remains above the demo threshold of 140/90 mmHg after 3 months, (3) addition of a synthetic ACE-inhibitor-class agent 'DemoPril-X' if control is not achieved, (4) specialist referral if resistant hypertension (uncontrolled on 3+ synthetic agents) is suspected. Target for this fictional demo protocol is <130/80 mmHg for most adults.",
+    "metadata": {"category": "guideline", "condition": "hypertension"}
+  },
+  {
+    "doc_id": "clin-002",
+    "title": "Synthetic Hypertension Treatment Protocol - Medication Titration",
+    "content": "SYNTHETIC DEMO CONTENT. This fictional treatment protocol for hypertension describes titration of demo medication 'DemoPril-X': start 5mg once daily, increase to 10mg after 2 weeks if tolerated and blood pressure remains elevated, maximum fictional demo dose 40mg daily. Monitor synthetic potassium and creatinine at 1 and 4 weeks after initiation or dose change in this demo scenario. If synthetic patient reports demo side effects such as persistent cough, switch to synthetic ARB-class agent 'DemoSartan-B'.",
+    "metadata": {"category": "protocol", "condition": "hypertension"}
+  },
+  {
+    "doc_id": "clin-003",
+    "title": "Synthetic Type 2 Diabetes Care Pathway",
+    "content": "SYNTHETIC DEMO CONTENT. Fictional demo pathway for type 2 diabetes: first-line synthetic agent 'DemoMetformin' 500mg twice daily with meals, titrate to 1000mg twice daily as tolerated. Target fictional demo HbA1c <7% for most adults. Add synthetic SGLT2-class agent 'DemoGliflozin' if target not met after 3 months or if synthetic cardiovascular risk factors are present.",
+    "metadata": {"category": "pathway", "condition": "diabetes"}
+  },
+  {
+    "doc_id": "clin-004",
+    "title": "Synthetic Community-Acquired Pneumonia Procedure",
+    "content": "SYNTHETIC DEMO CONTENT. This fictional clinical procedure for suspected community-acquired pneumonia in the demo environment: assess synthetic CURB-65 score, obtain synthetic chest imaging, begin empiric synthetic antibiotic 'DemoAmox-Clav' for low-risk demo patients managed as outpatients, escalate to synthetic IV combination therapy and admission for demo patients scoring CURB-65 >= 2.",
+    "metadata": {"category": "procedure", "condition": "pneumonia"}
+  },
+  {
+    "doc_id": "clin-005",
+    "title": "Synthetic Asthma Exacerbation Disease Information",
+    "content": "SYNTHETIC DEMO CONTENT. Fictional disease information: synthetic asthma exacerbations in this demo world are staged mild/moderate/severe based on demo peak-flow percentage and synthetic accessory muscle use. Mild-moderate fictional demo exacerbations are treated with synthetic short-acting beta-agonist 'DemoAlbuterol' via nebulizer plus a short synthetic oral corticosteroid course 'DemoPred' 40mg daily for 5 days.",
+    "metadata": {"category": "disease_info", "condition": "asthma"}
+  },
+  {
+    "doc_id": "clin-006",
+    "title": "Synthetic Post-Operative Wound Care Procedure",
+    "content": "SYNTHETIC DEMO CONTENT. This fictional post-operative procedure describes synthetic wound care: keep the demo surgical dressing dry and intact for 48 hours, inspect daily for synthetic signs of infection (erythema, purulent discharge, fever), synthetic sutures/staples removed per the demo surgical team's schedule, typically 7-14 days depending on synthetic wound location.",
+    "metadata": {"category": "procedure", "condition": "post-operative"}
+  },
+  {
+    "doc_id": "clin-007",
+    "title": "Synthetic Medication Information Sheet - DemoStatin",
+    "content": "SYNTHETIC DEMO CONTENT. 'DemoStatin' is a fictional lipid-lowering demo medication used in this synthetic knowledge base for synthetic hyperlipidemia. Fictional dosing: 10-40mg once daily at bedtime. Synthetic monitoring: liver enzymes at baseline and if symptomatic. Fictional demo contraindication: active synthetic liver disease.",
+    "metadata": {"category": "medication", "condition": "hyperlipidemia"}
+  }
+]

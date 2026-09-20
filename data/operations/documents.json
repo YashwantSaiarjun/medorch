@@ -1,0 +1,44 @@
+[
+  {
+    "doc_id": "ops-001",
+    "title": "Synthetic Hospital Admission Workflow",
+    "content": "SYNTHETIC DEMO CONTENT (fictional operations workflow, not a real hospital process). The fictional demo hospital admission workflow: (1) synthetic patient registration at the demo front desk with ID verification, (2) synthetic insurance eligibility check via the demo payer portal, (3) synthetic bed assignment coordinated with the demo nursing supervisor, (4) synthetic admitting physician completes the demo intake note within 4 hours, (5) synthetic wristband and allergy-band issued, (6) synthetic orientation packet given to patient/family.",
+    "metadata": {"category": "workflow", "domain": "admissions"}
+  },
+  {
+    "doc_id": "ops-002",
+    "title": "Synthetic Corresponding Hospital Admission Workflow - Hypertension Ward Transfer",
+    "content": "SYNTHETIC DEMO CONTENT. This fictional demo workflow describes the operations-side hospital admission workflow that corresponds to a synthetic hypertensive-urgency admission: synthetic triage flags the demo case as priority-2, synthetic bed management assigns a monitored-ward bed within 30 minutes, synthetic case management opens a demo care-coordination ticket, synthetic discharge planning begins on synthetic admission day 1 per the demo operations policy.",
+    "metadata": {"category": "workflow", "domain": "admissions"}
+  },
+  {
+    "doc_id": "ops-003",
+    "title": "Synthetic Outpatient Appointment Scheduling Procedure",
+    "content": "SYNTHETIC DEMO CONTENT. Fictional appointment procedure: synthetic patients may book via the demo online portal, demo call center, or demo in-person kiosk. New synthetic patient visits are scheduled in 40-minute demo slots; synthetic follow-ups in 20-minute demo slots. A synthetic reminder is sent 48 hours before the appointment via the demo notification system. Same-day synthetic cancellations are logged in the demo scheduling system for operations reporting.",
+    "metadata": {"category": "procedure", "domain": "scheduling"}
+  },
+  {
+    "doc_id": "ops-004",
+    "title": "Synthetic Insurance Verification Workflow",
+    "content": "SYNTHETIC DEMO CONTENT. This fictional insurance workflow: synthetic front-desk staff capture demo payer ID and group number, submit a synthetic eligibility request to the demo clearinghouse, receive a synthetic coverage response within minutes in this demo environment, and flag synthetic prior-authorization requirements to the demo utilization-review team when required by the fictional payer policy.",
+    "metadata": {"category": "workflow", "domain": "insurance"}
+  },
+  {
+    "doc_id": "ops-005",
+    "title": "Synthetic Billing Policy - Demo Facility Charges",
+    "content": "SYNTHETIC DEMO CONTENT. Fictional billing policy for this demo facility: synthetic charges are batched nightly and submitted to the demo claims system, synthetic patient statements are generated on a 30-day demo cycle, synthetic disputed charges are routed to the demo billing-resolution queue with a 10-business-day fictional service-level target.",
+    "metadata": {"category": "policy", "domain": "billing"}
+  },
+  {
+    "doc_id": "ops-006",
+    "title": "Synthetic Administrative Procedure - Demo Staff Credentialing",
+    "content": "SYNTHETIC DEMO CONTENT. This fictional administrative procedure covers demo staff credentialing: synthetic new-hire credential packets are reviewed by the demo credentialing committee within 2 weeks, synthetic license verification is performed against the demo regulatory registry, and synthetic re-credentialing occurs every 2 years per this demo policy.",
+    "metadata": {"category": "procedure", "domain": "administration"}
+  },
+  {
+    "doc_id": "ops-007",
+    "title": "Synthetic Discharge Coordination Workflow",
+    "content": "SYNTHETIC DEMO CONTENT. Fictional discharge workflow: synthetic case management confirms demo follow-up appointment availability, synthetic transportation is arranged if needed, synthetic discharge paperwork and demo after-visit summary are prepared by the unit clerk, and a synthetic post-discharge call is scheduled for 48-72 hours later per this demo operations policy.",
+    "metadata": {"category": "workflow", "domain": "discharge"}
+  }
+]
