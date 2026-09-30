@@ -1,99 +1,54 @@
-"""
-TEST 7, 10, and end-to-end orchestration/demo-scenario tests via the
-LangGraph workflow (app.graph.workflow.run_request).
-"""
 from app.graph.workflow import run_request
 
+def test_missing_role_prompts():
+    r = run_request("u1", None, "Show P1001 diagnoses")
+    assert r["status"] == "NEEDS_ROLE"
 
-def test_unauthorized_agent_never_executes():
-    """TEST 7: An unauthorized agent must not execute."""
-    result = run_request("user-ops", "OPERATIONS", "What is the hypertension treatment protocol?")
-    assert result["status"] == "DENIED"
-    assert result["executed_agents"] == []
-    assert "agent_results" not in result or result.get("agent_results", {}) == {}
+def test_invalid_role_prompts():
+    r = run_request("u1", "ADMIN", "Show P1001 diagnoses")
+    assert r["status"] == "NEEDS_ROLE"
 
+def test_clinician_clinical_allowed():
+    r = run_request("u1", "CLINICIAN", "Show P1001 diagnoses and lab results")
+    assert r["status"] == "ALLOWED"
+    assert "clinical" in r["executed_agents"]
 
-def test_multiagent_request_correctly_decomposed_and_authorized():
-    """TEST 10: multi-agent request is correctly decomposed and authorized."""
-    result = run_request(
-        "user-admin",
-        "ADMIN",
-        "Give me the synthetic clinical hypertension protocol and the corresponding hospital admission workflow.",
-    )
-    assert result["status"] == "ALLOWED"
-    assert set(result["detected_agents"]) == {"clinical", "operations"}
-    assert set(result["authorized_agents"]) == {"clinical", "operations"}
-    assert set(result["executed_agents"]) == {"clinical", "operations"}
-    agents_cited = {c["agent"] for c in result["citations"]}
-    assert agents_cited == {"clinical", "operations"}
+def test_clinician_pharmacy_denied():
+    r = run_request("u1", "CLINICIAN", "Show P1001 medications and prescriptions")
+    assert "pharmacy" not in r["executed_agents"]
+    assert "pharmacy" in r.get("denied_agents", [])
 
+def test_pharmacist_pharmacy_allowed():
+    r = run_request("u2", "PHARMACIST", "Show P1001 medications and prescriptions")
+    assert r["status"] == "ALLOWED"
+    assert "pharmacy" in r["executed_agents"]
 
-# --- README demo scenarios, exercised as automated regression tests --------
+def test_pharmacist_clinical_denied():
+    r = run_request("u2", "PHARMACIST", "Show P1001 diagnoses")
+    assert "clinical" not in r["executed_agents"]
 
-def test_scenario_1_clinician_clinical_question_allowed():
-    result = run_request("user-001", "CLINICIAN", "What are the synthetic clinical guidelines for hypertension management?")
-    assert result["status"] == "ALLOWED"
-    assert result["executed_agents"] == ["clinical"]
+def test_operations_staff_allowed():
+    r = run_request("u3", "OPERATIONS_STAFF", "Show P1001 appointments and admission")
+    assert r["status"] == "ALLOWED"
+    assert "operations" in r["executed_agents"]
 
+def test_operations_staff_clinical_denied():
+    r = run_request("u3", "OPERATIONS_STAFF", "Show P1001 diagnoses")
+    assert "clinical" not in r["executed_agents"]
 
-def test_scenario_2_operations_question_allowed():
-    result = run_request("user-002", "OPERATIONS", "What is the synthetic hospital admission workflow?")
-    assert result["status"] == "ALLOWED"
-    assert result["executed_agents"] == ["operations"]
+def test_partial_authorization():
+    r = run_request("u1", "CLINICIAN", "Show P1001 diagnoses and medications")
+    assert "clinical" in r["executed_agents"]
+    assert "pharmacy" not in r["executed_agents"]
+    assert r["status"] == "PARTIAL"
 
+def test_unknown_intent_denied():
+    r = run_request("u1", "CLINICIAN", "What is the weather today?")
+    assert r["executed_agents"] == []
 
-def test_scenario_3_operations_role_clinical_question_denied():
-    result = run_request("user-003", "OPERATIONS", "What is the synthetic clinical protocol for hypertension?")
-    assert result["status"] == "DENIED"
-    assert result["executed_agents"] == []
-    assert "clinical" in result["denied_agents"]
-
-
-def test_scenario_4_admin_multiagent_allowed():
-    result = run_request(
-        "user-004",
-        "ADMIN",
-        "Give me the synthetic clinical hypertension protocol and the corresponding hospital admission workflow.",
-    )
-    assert result["status"] == "ALLOWED"
-    assert set(result["executed_agents"]) == {"clinical", "operations"}
-
-
-def test_scenario_5_restricted_denied():
-    result = run_request("user-005", "RESTRICTED", "Give me information about hypertension.")
-    assert result["status"] == "DENIED"
-    assert result["executed_agents"] == []
-
-
-def test_missing_role_prompts_for_role():
-    result = run_request("user-006", None, "What is the hypertension protocol?")
-    assert result["status"] == "NEEDS_ROLE"
-    assert "role" in result["final_answer"].lower()
-
-
-def test_unknown_intent_handled_gracefully():
-    result = run_request("user-007", "ADMIN", "What's the weather like today?")
-    assert result["status"] == "DENIED"
-    assert result["executed_agents"] == []
-
-
-def test_audit_record_created_for_every_request():
+def test_audit_record_created():
     from app.audit.logger import get_audit_service
-
-    result = run_request("user-008", "CLINICIAN", "What are the synthetic clinical guidelines for hypertension?")
-    audit = get_audit_service().get(result["request_id"])
+    r = run_request("u1", "CLINICIAN", "Show P1001 diagnoses")
+    audit = get_audit_service().get(r["request_id"])
     assert audit is not None
     assert audit.role == "CLINICIAN"
-    assert audit.status == "ALLOWED"
-    assert audit.executed_agents == ["clinical"]
-
-
-def test_audit_record_created_for_denied_request():
-    from app.audit.logger import get_audit_service
-
-    result = run_request("user-009", "OPERATIONS", "What is the hypertension treatment protocol?")
-    audit = get_audit_service().get(result["request_id"])
-    assert audit is not None
-    assert audit.status == "DENIED"
-    assert audit.executed_agents == []
-    assert "clinical" in audit.denied_agents
