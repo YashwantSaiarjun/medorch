@@ -35,9 +35,9 @@ def identify_role(state: MedOrchState) -> dict:
         msg = "Please specify your role: Clinician, Pharmacist, or Operations Staff."
         return {"status": "NEEDS_ROLE", "final_answer": msg,
                 "detected_agents": [], "authorized_agents": [],
-                "denied_agents": [], "executed_agents": [], "citations": []}
+                "denied_agents": [], "executed_agents": [],
+                "citations": [], "tools_called": []}   # ← add tools_called
     return {"role": role.upper()}
-
 def analyze_intent(state: MedOrchState) -> dict:
     result = classify_intent(state["message"])
     return {"detected_agents": [a.value for a in result.agents],
@@ -68,21 +68,36 @@ def access_denied(state: MedOrchState) -> dict:
             "citations": []}
 
 def execute_agents(state: MedOrchState) -> dict:
-    settings = get_settings()
+    settings   = get_settings()
     executed, results = [], {}
+    patient_id = state.get("patient_id")         # ← NEW
+    tools_called = []                             # ← NEW
+
     for agent_id in state.get("authorized_agents", []):
         cls = _AGENT_MAP.get(agent_id)
         if not cls:
             continue
         try:
-            response = cls().handle(state["message"], top_k=settings.retrieval_top_k)
+            response = cls().handle(
+                state["message"],
+                top_k=settings.retrieval_top_k,
+                patient_id=patient_id             # ← NEW
+            )
             executed.append(agent_id)
             results[agent_id] = asdict(response)
+
+            # collect tools called across all agents
+            meta = response.retrieval_metadata or {}
+            tools_called.extend(meta.get("tools_called", []))  # ← NEW
+
         except Exception as exc:
             logger.exception("Agent %s failed", agent_id)
             results[agent_id] = {"agent_id": agent_id, "answer": "",
                                  "sources": [], "error": str(exc)}
-    return {"executed_agents": executed, "agent_results": results}
+
+    return {"executed_agents": executed,
+            "agent_results": results,
+            "tools_called": tools_called}         # ← NEW}
 
 def aggregate_results(state: MedOrchState) -> dict:
     sections, citations = [], []
@@ -156,8 +171,12 @@ def get_compiled_graph():
     return _graph
 
 def run_request(user_id: str, role: str | None, message: str,
-                request_id: str | None = None) -> MedOrchState:
+                request_id: str | None = None,
+                patient_id: str | None = None) -> MedOrchState:   # ← NEW
     return get_compiled_graph().invoke({
         "request_id": request_id or f"req-{uuid.uuid4().hex[:12]}",
-        "user_id": user_id, "role": role, "message": message,
+        "user_id":    user_id,
+        "role":       role,
+        "message":    message,
+        "patient_id": patient_id,    # ← NEW
     })

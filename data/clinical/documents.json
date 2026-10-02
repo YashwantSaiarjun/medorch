@@ -1,0 +1,44 @@
+[
+  {
+    "doc_id": "clin-001",
+    "title": "Clinical Assessment Framework",
+    "content": "Clinical assessment generally involves understanding the presenting problem, relevant history, examination findings, available investigations, risk factors, existing conditions, current medicines, and relevant patient context. The appropriate assessment pathway depends on the condition and care setting.",
+    "metadata": {"category": "assessment", "domain": "clinical"}
+  },
+  {
+    "doc_id": "clin-002",
+    "title": "Evidence-Based Clinical Management",
+    "content": "Clinical management should be grounded in current, applicable clinical guidelines and the patient's clinical context. Guidelines may specify when treatment should be initiated, monitoring requirements, treatment targets, and circumstances requiring escalation or referral.",
+    "metadata": {"category": "guideline", "domain": "clinical"}
+  },
+  {
+    "doc_id": "clin-003",
+    "title": "Hypertension Pharmacological Treatment",
+    "content": "WHO's guideline for pharmacological treatment of hypertension in adults addresses treatment initiation, follow-up, blood-pressure targets, and choices including monotherapy, dual therapy, and single-pill combinations for appropriately diagnosed adults.",
+    "metadata": {"category": "disease_management", "domain": "clinical", "condition": "hypertension"}
+  },
+  {
+    "doc_id": "clin-004",
+    "title": "Clinical Monitoring and Follow-Up",
+    "content": "Clinical management is not limited to an initial decision. Appropriate follow-up can include monitoring response, adverse effects, relevant measurements, adherence, and whether escalation or referral is needed. Exact intervals and targets must come from the applicable guideline.",
+    "metadata": {"category": "monitoring", "domain": "clinical"}
+  },
+  {
+    "doc_id": "clin-005",
+    "title": "Clinical Referral Principles",
+    "content": "Referral decisions depend on the condition, severity, risk, available services, and local clinical pathways. The agent should distinguish between information explicitly present in its knowledge base and general assumptions.",
+    "metadata": {"category": "referral", "domain": "clinical"}
+  },
+  {
+    "doc_id": "clin-006",
+    "title": "Clinical Agent Scope and Boundaries",
+    "content": "The Clinical Agent answers only from retrieved clinical documents or patient records. It does not invent diagnoses, treatments, doses, or patient-specific recommendations. This knowledge base is not a substitute for professional clinical judgment.",
+    "metadata": {"category": "agent_policy", "domain": "clinical"}
+  },
+  {
+    "doc_id": "clin-007",
+    "title": "Clinical Knowledge Sources",
+    "content": "This knowledge base draws on: (1) World Health Organization, Guideline for the pharmacological treatment of hypertension in adults (2021). (2) WHO, Guideline for the pharmacological treatment of hypertension in adults: Web Annex A (2021).",
+    "metadata": {"category": "references", "domain": "clinical"}
+  }
+]

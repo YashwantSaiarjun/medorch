@@ -29,20 +29,22 @@ _sessions: dict[str, str] = {}  # user_id -> role
 
 
 class ChatRequest(BaseModel):
-    user_id: str = Field(..., min_length=1, max_length=128)
-    role: str | None = Field(default=None, description="CLINICIAN | OPERATIONS | ADMIN | RESTRICTED")
-    message: str = Field(..., min_length=1, max_length=4000)
+    user_id:    str        = Field(..., min_length=1, max_length=128)
+    role:       str | None = Field(default=None)
+    patient_id: str | None = Field(default=None)   # ← NEW
+    message:    str        = Field(..., min_length=1, max_length=4000)
 
 
 class ChatResponse(BaseModel):
-    request_id: str
-    status: str
-    final_response: str
-    agents_considered: list[str]
-    authorized_agents: list[str]
-    denied_agents: list[str]
-    executed_agents: list[str]
-    citations: list[dict]
+    request_id:       str
+    status:           str
+    final_response:   str
+    agents_considered:list[str]
+    authorized_agents:list[str]
+    denied_agents:    list[str]
+    executed_agents:  list[str]
+    tools_called:     list[str]   # ← NEW
+    citations:        list[dict]
 
 
 class SessionRequest(BaseModel):
@@ -61,13 +63,18 @@ def chat(req: ChatRequest) -> ChatResponse:
     if role:
         role = role.upper()
         if role not in Role.values():
-            raise HTTPException(status_code=422, detail=f"Unknown role '{role}'. Valid roles: {Role.values()}")
+            raise HTTPException(status_code=422,
+                detail=f"Unknown role '{role}'. Valid: {Role.values()}")
 
     request_id = f"req-{uuid.uuid4().hex[:12]}"
-    result = run_request(user_id=req.user_id, role=role, message=req.message, request_id=request_id)
+    result = run_request(
+        user_id=req.user_id,
+        role=role,
+        message=req.message,
+        request_id=request_id,
+        patient_id=req.patient_id    # ← NEW
+    )
 
-    # Persist the role on the session once provided, so subsequent requests
-    # don't need to re-specify it (mirrors the Streamlit UI's role selector).
     if role:
         _sessions[req.user_id] = role
 
@@ -79,6 +86,7 @@ def chat(req: ChatRequest) -> ChatResponse:
         authorized_agents=result.get("authorized_agents", []),
         denied_agents=result.get("denied_agents", []),
         executed_agents=result.get("executed_agents", []),
+        tools_called=result.get("tools_called", []),     # ← NEW
         citations=result.get("citations", []),
     )
 
