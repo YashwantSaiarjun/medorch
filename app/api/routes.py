@@ -118,12 +118,12 @@ def health() -> dict:
 
 # ── Staff credentials ──────────────────────────────────────────────────────
 _CREDENTIALS = {
-    "user-001":  {"name": "Dr. Sarah Smith", "role": "CLINICIAN",       "password": "doctor123"},
-    "user-002":  {"name": "Dr. James Patel", "role": "CLINICIAN",       "password": "doctor123"},
-    "user-003":  {"name": "Dr. Aisha Nkosi", "role": "CLINICIAN",       "password": "doctor123"},
-    "user-004":  {"name": "Mary Johnson",     "role": "PHARMACIST",      "password": "pharma123"},
-    "user-005":  {"name": "Tom Williams",     "role": "PHARMACIST",      "password": "pharma123"},
-    "admin-001": {"name": "Admin",            "role": "CLINICIAN",       "password": "admin2024"},
+    "user-001":  {"name": "Dr. Sarah Smith", "role": "CLINICIAN",        "password": "doctor123"},
+    "user-002":  {"name": "Dr. James Patel", "role": "CLINICIAN",        "password": "doctor123"},
+    "user-003":  {"name": "Dr. Aisha Nkosi", "role": "CLINICIAN",        "password": "doctor123"},
+    "user-004":  {"name": "Mary Johnson",     "role": "PHARMACIST",       "password": "pharma123"},
+    "user-005":  {"name": "Tom Williams",     "role": "OPERATIONS_STAFF", "password": "ops123"},
+    "admin-001": {"name": "Admin",            "role": "CLINICIAN",        "password": "admin2024"},
 }
 
 class LoginRequest(BaseModel):

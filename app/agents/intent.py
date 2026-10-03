@@ -20,13 +20,26 @@ No prose outside the JSON."""
 
 _KEYWORDS = {
     AgentId.CLINICAL:   ["diagnos", "lab", "test result", "clinical",
-                         "disease", "condition", "treatment", "hypertension"],
-    AgentId.PHARMACY:   ["medic", "prescription", "drug", "pharmacy",
-                         "pharmacist", "reconciliation", "dose"],
-    AgentId.OPERATIONS: ["appointment", "admission", "admit",
-                         "schedule", "ward", "discharge"],
-}
+                         "disease", "condition", "treatment", "hypertension",
+                         "age", "how old", "dob", "date of birth", "born",
+                         "blood type", "gender", "details", "information",
+                         "tell me about", "show me", "what is the patient",
+                         "patient name", "patient info", "who is"],
 
+    AgentId.PHARMACY:   ["medic", "prescription", "drug", "pharmacy",
+                         "pharmacist", "reconciliation", "dose", "tablet",
+                         "capsule", "injection", "medication", "medicine",
+                         "patient name", "patient info", "who is", "name",
+                         "age", "how old", "dob", "date of birth", "born",
+                         "blood type", "gender", "details"],
+
+    AgentId.OPERATIONS: ["appointment", "admission", "admit",
+                         "schedule", "ward", "discharge", "booking",
+                         "visit", "admitted", "hospital stay",
+                         "patient name", "patient info", "who is", "name",
+                         "age", "how old", "dob", "date of birth", "born",
+                         "blood type", "gender", "details"],
+}
 
 @dataclass(frozen=True)
 class IntentResult:
@@ -89,10 +102,6 @@ or
 
 
 def classify_query_type(message: str) -> str:
-    """
-    Returns "patient_data" or "general_knowledge".
-    Falls back to keyword heuristic if LLM unavailable.
-    """
     if llm_configured():
         try:
             raw   = call_llm(_QUERY_TYPE_PROMPT,
@@ -105,9 +114,20 @@ def classify_query_type(message: str) -> str:
             pass
 
     # Deterministic fallback
-    text    = message.lower()
+    text = message.lower()
+
+    # These are always patient-specific even if they start with "what is"
+    patient_specific = [
+        "patient name", "patient age", "patient dob", "blood type",
+        "who is the patient", "what is the patient", "patient gender",
+        "patient details", "patient info"
+    ]
+    if any(p in text for p in patient_specific):
+        return "patient_data"
+
     general = ["what is", "what are", "explain", "define",
                "tell me about", "how does", "describe", "why is"]
     if any(text.startswith(g) for g in general):
         return "general_knowledge"
+
     return "patient_data"
