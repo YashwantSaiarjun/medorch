@@ -48,3 +48,19 @@ def get_lab_results(patient_id: str) -> ToolResult:
         patient_id=patient_id,
         message=f"Found {len(rows)} lab result(s) for {patient_id}."
     )
+
+
+def get_patient_info(patient_id: str) -> ToolResult:
+    """Retrieve basic patient demographics."""
+    patient = get_patient(patient_id)
+    if not patient:
+        return ToolResult(
+            success=False, data=[], tool_name="get_patient_info",
+            patient_id=patient_id,
+            message=f"Patient {patient_id} not found."
+        )
+    return ToolResult(
+        success=True, data=[patient], tool_name="get_patient_info",
+        patient_id=patient_id,
+        message=f"Patient info retrieved for {patient_id}."
+    )

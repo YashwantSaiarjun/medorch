@@ -1,0 +1,44 @@
+[
+  {
+    "doc_id": "pharm-001",
+    "title": "Medication Safety — WHO Framework",
+    "content": "WHO identifies medication-related harm as a major patient-safety concern and highlights high-risk situations, polypharmacy, and transitions of care as important areas for action. Medication safety requires attention across the entire medication-use process and across care settings.",
+    "metadata": {"category": "safety", "domain": "pharmacy"}
+  },
+  {
+    "doc_id": "pharm-002",
+    "title": "The Medication-Use Process",
+    "content": "Medication safety can be affected during prescribing, transcribing, dispensing, administration, and monitoring. Safety depends on both medication-specific factors and healthcare-system processes. Understanding the full medication-use process helps identify where errors are most likely to occur.",
+    "metadata": {"category": "process", "domain": "pharmacy"}
+  },
+  {
+    "doc_id": "pharm-003",
+    "title": "Medication Reconciliation",
+    "content": "Medication reconciliation is the process of maintaining and communicating accurate medication information when medication regimens change or when patients move between care settings. Reconciliation should compare current medication orders with all medications the patient has been taking to identify and resolve discrepancies.",
+    "metadata": {"category": "workflow", "domain": "pharmacy"}
+  },
+  {
+    "doc_id": "pharm-004",
+    "title": "High-Risk Medication Situations",
+    "content": "High-risk medication situations may involve high-alert medicines, patient and provider factors, and system factors. High-alert medications bear a heightened risk of causing significant patient harm when used in error and require additional safeguards in prescribing, dispensing, and administration.",
+    "metadata": {"category": "safety", "domain": "pharmacy", "risk": "high"}
+  },
+  {
+    "doc_id": "pharm-005",
+    "title": "Medications During Transitions of Care",
+    "content": "Medication information should be reviewed carefully during transitions because discrepancies can contribute to medication-related harm. A structured approach to medication review at transitions, including reconciliation of the medication list and communication with the patient and receiving providers, supports medication safety.",
+    "metadata": {"category": "transitions", "domain": "pharmacy"}
+  },
+  {
+    "doc_id": "pharm-006",
+    "title": "Pharmacy Agent Scope and Boundaries",
+    "content": "The Pharmacy Agent does not prescribe or independently recommend medication for a specific patient. It does not invent doses, contraindications, interactions, or formulary status. Medication information must be verified against current authoritative sources before clinical application.",
+    "metadata": {"category": "agent_policy", "domain": "pharmacy"}
+  },
+  {
+    "doc_id": "pharm-007",
+    "title": "Pharmacy Knowledge Sources",
+    "content": "This knowledge base draws on: (1) WHO, Medication without harm: Policy brief (2024). (2) WHO, Medication safety in high-risk situations (2019). (3) Joint Commission, National Performance Goal 14: Effectively Managing Medications. (4) Joint Commission, Medication Reconciliation (updated 2026).",
+    "metadata": {"category": "references", "domain": "pharmacy"}
+  }
+]

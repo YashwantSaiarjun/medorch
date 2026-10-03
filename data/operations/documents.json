@@ -1,0 +1,44 @@
+[
+  {
+    "doc_id": "ops-001",
+    "title": "Hospital Admission and Operational Workflow",
+    "content": "Hospital operations commonly coordinate registration, patient movement, service allocation, communication, documentation requirements, scheduling, and downstream care processes. Exact workflows vary by organization.",
+    "metadata": {"category": "workflow", "domain": "operations"}
+  },
+  {
+    "doc_id": "ops-002",
+    "title": "Healthcare Scheduling Processes",
+    "content": "Scheduling processes should coordinate the requested service, appropriate provider and resource availability, patient information, appointment timing, and relevant follow-up requirements. The agent must not invent appointment availability.",
+    "metadata": {"category": "procedure", "domain": "operations"}
+  },
+  {
+    "doc_id": "ops-003",
+    "title": "Discharge Planning — IDEAL Framework",
+    "content": "AHRQ's IDEAL Discharge Planning approach emphasizes beginning discharge engagement early, involving patients and families, discussing key areas needed for a safe transition home, educating throughout the hospital stay, and using teach-back to confirm understanding.",
+    "metadata": {"category": "workflow", "domain": "operations"}
+  },
+  {
+    "doc_id": "ops-004",
+    "title": "Patient and Family Communication",
+    "content": "AHRQ resources emphasize clear communication, patient and family engagement, teamwork, and transfer of information during transitions of care. Operational communication processes should ensure patients and families receive understandable information.",
+    "metadata": {"category": "policy", "domain": "operations"}
+  },
+  {
+    "doc_id": "ops-005",
+    "title": "Operational Handoffs",
+    "content": "Operational handoffs should preserve the information required by the receiving team and clearly identify outstanding tasks, responsibilities, and next steps. Structured handoff processes ensure relevant patient information is communicated clearly between teams.",
+    "metadata": {"category": "procedure", "domain": "operations"}
+  },
+  {
+    "doc_id": "ops-006",
+    "title": "Operations Agent Scope and Boundaries",
+    "content": "The Operations Agent does not provide clinical diagnosis or treatment recommendations. It does not invent appointment slots, insurance decisions, billing outcomes, or hospital policies. Organization-specific workflows override generic reference material.",
+    "metadata": {"category": "agent_policy", "domain": "operations"}
+  },
+  {
+    "doc_id": "ops-007",
+    "title": "Operations Knowledge Sources",
+    "content": "This knowledge base draws on: (1) AHRQ, Guide to Patient and Family Engagement in Hospital Quality and Safety. (2) AHRQ, IDEAL Discharge Planning resources. (3) AHRQ, Transitions of Care resources.",
+    "metadata": {"category": "references", "domain": "operations"}
+  }
+]
