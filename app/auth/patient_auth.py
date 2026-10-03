@@ -13,19 +13,13 @@ from app.auth.models import Role
 # User → permitted patient IDs mapping
 # In production: query the users/patient_assignments table
 _PATIENT_ACCESS_MAP: dict[str, list[str]] = {
-    # Clinicians — each has 100 assigned patients
-    "user-001": [f"P{1000+i}" for i in range(1, 101)],    # Dr. Sarah Smith
-    "user-002": [f"P{1000+i}" for i in range(101, 201)],  # Dr. James Patel
-    "user-003": [f"P{1000+i}" for i in range(201, 301)],  # Dr. Aisha Nkosi
-
-    # Pharmacists — access all patients (handled by role check above)
-    "user-004": ["*"],   # Mary Johnson
-    "user-005": ["*"],   # Tom Williams
-
-    # Admin
-    "admin-001": ["*"],
+    "user-001": [f"P{1000+i}" for i in range(1, 201)],    # Dr. Sarah Smith  P1001-P1200
+    "user-002": [f"P{1000+i}" for i in range(201, 401)],  # Dr. James Patel  P1201-P1400
+    "user-003": [f"P{1000+i}" for i in range(401, 601)],  # Dr. Aisha Nkosi  P1401-P1600
+    "user-004": ["*"],                                      # Mary Johnson     ALL patients
+    "user-005": ["*"],   # Tom Williams — all patients (operations manages whole hospital)
+    "admin-001": ["*"],                                     # Admin            ALL patients
 }
-
 def is_patient_authorized(user_id: str, patient_id: str,
                            role: str | None = None) -> bool:
     """

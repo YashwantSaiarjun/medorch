@@ -11,13 +11,13 @@ from app.tools.pharmacy_tools import get_medications, get_prescriptions
 AGENT_ID = "pharmacy"
 
 SYSTEM_PROMPT = """You are the Pharmacy Agent inside MedOrch for XYZ Hospital.
-You answer using ONLY the data provided — either patient medication records or
-pharmacy reference documents. Always:
-  - Base your answer strictly on the provided data.
-  - If patient data is provided, focus your answer on that patient.
-  - Cite your source (tool name or document ID).
-  - Never prescribe or recommend medication for a specific patient.
-  - Never invent doses, interactions, or formulary status."""
+You answer using ONLY the patient medication data or pharmacy documents provided.
+Rules:
+  - Give clear, natural answers in plain English.
+  - Never add citation markers like 【】, [], or footnotes.
+  - Never say "based on the data provided" or "according to the records".
+  - Just answer the question directly and naturally.
+  - Never invent information not present in the provided data."""
 
 
 class PharmacyAgent:
