@@ -4,6 +4,8 @@ from app.agents.base_agent import AgentResponse, SourceCitation
 from app.llm.client import LLMUnavailableError, call_llm, llm_configured
 from app.rag.clinical_retriever import ClinicalRetriever
 from app.tools.clinical_tools import get_diagnoses, get_lab_results
+from app.agents.intent import classify_query_type
+from app.tools.clinical_tools import get_diagnoses, get_lab_results, get_patient_info
 
 AGENT_ID = "clinical"
 
@@ -24,43 +26,43 @@ class ClinicalAgent:
     def handle(self, query: str, top_k: int = 3,
                patient_id: str | None = None) -> AgentResponse:
         start = time.monotonic()
+        query_type = classify_query_type(query)
 
-        # ── PATH 1: Patient-specific → use tools ──────────────────────────
-        if patient_id:
+        if patient_id is not None and query_type == "patient_data":
             return self._handle_patient_query(query, patient_id, start)
 
-        # ── PATH 2: General question → use RAG ────────────────────────────
         return self._handle_rag_query(query, top_k, start)
 
     def _handle_patient_query(self, query: str,
-                               patient_id: str, start: float) -> AgentResponse:
-        dx_result  = get_diagnoses(patient_id)
+                           patient_id: str, start: float) -> AgentResponse:
+        info_result = get_patient_info(patient_id)
+        dx_result = get_diagnoses(patient_id)
         lab_result = get_lab_results(patient_id)
 
-        tools_called = [dx_result.tool_name, lab_result.tool_name]
-        elapsed_ms   = round((time.monotonic() - start) * 1000, 2)
-
-        if not dx_result.success and not lab_result.success:
-            return AgentResponse(
-                agent_id=AGENT_ID,
-                answer=f"Patient {patient_id} not found in clinical records.",
-                sources=[],
-                retrieval_metadata={"latency_ms": elapsed_ms,
-                                    "tools_called": tools_called,
-                                    "patient_id": patient_id},
-            )
+        tools_called = [
+            info_result.tool_name,
+            dx_result.tool_name,
+            lab_result.tool_name,
+        ]
+        elapsed_ms = round((time.monotonic() - start) * 1000, 2)
 
         context = self._format_patient_context(
-            patient_id, dx_result.data, lab_result.data)
-        answer  = self._synthesize_from_tools(query, context, patient_id)
+            patient_id,
+            info_result.data,
+            dx_result.data,
+            lab_result.data,
+        )
+        answer = self._synthesize_from_tools(query, context, patient_id)
 
         return AgentResponse(
             agent_id=AGENT_ID,
             answer=answer,
             sources=[],
-            retrieval_metadata={"latency_ms": elapsed_ms,
-                                "tools_called": tools_called,
-                                "patient_id": patient_id},
+            retrieval_metadata={
+                "latency_ms": elapsed_ms,
+                "tools_called": tools_called,
+                "patient_id": patient_id,
+            },
         )
 
     def _handle_rag_query(self, query: str,
@@ -96,11 +98,23 @@ class ClinicalAgent:
         )
 
     def _format_patient_context(self, patient_id: str,
-                                 diagnoses: list, labs: list) -> str:
-        lines = [f"Patient ID: {patient_id}\n"]
+                             patient_info: list,
+                             diagnoses: list,
+                             labs: list) -> str:
+        lines = []
+
+        # Patient demographics
+        if patient_info:
+            p = patient_info[0]
+            lines.append(f"PATIENT INFORMATION:")
+            lines.append(f"  Name:       {p['first_name']} {p['last_name']}")
+            lines.append(f"  Patient ID: {p['patient_id']}")
+            lines.append(f"  DOB:        {p['dob']}")
+            lines.append(f"  Gender:     {p['gender']}")
+            lines.append(f"  Blood Type: {p['blood_type']}")
 
         if diagnoses:
-            lines.append("DIAGNOSES:")
+            lines.append("\nDIAGNOSES:")
             for d in diagnoses:
                 lines.append(
                     f"  - {d['description']} (ICD: {d['icd_code']}) "

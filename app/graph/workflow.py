@@ -51,19 +51,14 @@ def identify_role(state: MedOrchState) -> dict:
 
 
 def check_patient_auth(state: MedOrchState) -> dict:
-    """
-    Patient-level authorization check.
-    Runs AFTER role check, BEFORE intent detection.
-    Pure Python — no LLM involved.
-    """
     patient_id = state.get("patient_id")
     user_id    = state.get("user_id")
+    role       = state.get("role")
 
-    # No patient selected — skip check (RAG path)
     if not patient_id:
         return {}
 
-    if not is_patient_authorized(user_id, patient_id):
+    if not is_patient_authorized(user_id, patient_id, role=role):
         msg = get_denial_message(user_id, patient_id)
         return {
             "status":            "PATIENT_DENIED",

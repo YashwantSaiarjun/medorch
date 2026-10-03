@@ -8,28 +8,36 @@ In production this would query a database. For this POC
 we use a static mapping that can be easily extended.
 """
 from __future__ import annotations
+from app.auth.models import Role
 
 # User → permitted patient IDs mapping
 # In production: query the users/patient_assignments table
 _PATIENT_ACCESS_MAP: dict[str, list[str]] = {
-    "user-001": ["P1001", "P1002", "P1003", "P1004", "P1005"],
-    "user-002": ["P1006", "P1007", "P1008", "P1009", "P1010"],
-    "user-003": ["P1001", "P1011", "P1012", "P1013", "P1014"],
-    "user-004": ["P1015", "P1016", "P1017", "P1018", "P1019"],
-    "user-005": ["P1020", "P1021", "P1022", "P1023", "P1024"],
-    # Admin users get access to all patients
+    # Clinicians — each has 100 assigned patients
+    "user-001": [f"P{1000+i}" for i in range(1, 101)],    # Dr. Sarah Smith
+    "user-002": [f"P{1000+i}" for i in range(101, 201)],  # Dr. James Patel
+    "user-003": [f"P{1000+i}" for i in range(201, 301)],  # Dr. Aisha Nkosi
+
+    # Pharmacists — access all patients (handled by role check above)
+    "user-004": ["*"],   # Mary Johnson
+    "user-005": ["*"],   # Tom Williams
+
+    # Admin
     "admin-001": ["*"],
 }
 
-
-def is_patient_authorized(user_id: str, patient_id: str) -> bool:
+def is_patient_authorized(user_id: str, patient_id: str,
+                           role: str | None = None) -> bool:
     """
     Check if a user is permitted to access a specific patient.
-    Returns True if authorized, False if denied.
+    Pharmacists have access to all patients for medication/prescription data.
     """
+    # Pharmacists can access any patient
+    if role and role.upper() == Role.PHARMACIST.value:
+        return True
+
     permitted = _PATIENT_ACCESS_MAP.get(user_id, [])
 
-    # "*" means access to all patients (admin only)
     if "*" in permitted:
         return True
 

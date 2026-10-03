@@ -1,8 +1,11 @@
 from __future__ import annotations
 import time
+
 from app.agents.base_agent import AgentResponse, SourceCitation
+from app.agents.intent import classify_query_type
 from app.llm.client import LLMUnavailableError, call_llm, llm_configured
 from app.rag.pharmacy_retriever import PharmacyRetriever
+from app.tools.clinical_tools import get_patient_info
 from app.tools.pharmacy_tools import get_medications, get_prescriptions
 
 AGENT_ID = "pharmacy"
@@ -24,32 +27,26 @@ class PharmacyAgent:
     def handle(self, query: str, top_k: int = 3,
                patient_id: str | None = None) -> AgentResponse:
         start = time.monotonic()
+        query_type = classify_query_type(query)
 
-        if patient_id:
+        if patient_id and query_type == "patient_data":
             return self._handle_patient_query(query, patient_id, start)
+
         return self._handle_rag_query(query, top_k, start)
 
-    def _handle_patient_query(self, query: str,
-                               patient_id: str, start: float) -> AgentResponse:
+    def _handle_patient_query(self, query, patient_id, start):
+        info_result = get_patient_info(patient_id)
         med_result = get_medications(patient_id)
-        rx_result  = get_prescriptions(patient_id)
+        rx_result = get_prescriptions(patient_id)
 
-        tools_called = [med_result.tool_name, rx_result.tool_name]
-        elapsed_ms   = round((time.monotonic() - start) * 1000, 2)
-
-        if not med_result.success and not rx_result.success:
-            return AgentResponse(
-                agent_id=AGENT_ID,
-                answer=f"Patient {patient_id} not found in pharmacy records.",
-                sources=[],
-                retrieval_metadata={"latency_ms": elapsed_ms,
-                                    "tools_called": tools_called,
-                                    "patient_id": patient_id},
-            )
+        tools_called = [info_result.tool_name,
+                        med_result.tool_name,
+                        rx_result.tool_name]
+        elapsed_ms = round((time.monotonic() - start) * 1000, 2)
 
         context = self._format_patient_context(
-            patient_id, med_result.data, rx_result.data)
-        answer  = self._synthesize_from_tools(query, context, patient_id)
+            patient_id, info_result.data, med_result.data, rx_result.data)
+        answer = self._synthesize_from_tools(query, context, patient_id)
 
         return AgentResponse(
             agent_id=AGENT_ID, answer=answer, sources=[],
@@ -90,12 +87,21 @@ class PharmacyAgent:
                                 "documents_considered": len(results)},
         )
 
-    def _format_patient_context(self, patient_id: str,
-                                 medications: list, prescriptions: list) -> str:
-        lines = [f"Patient ID: {patient_id}\n"]
+    def _format_patient_context(self, patient_id, patient_info,
+                               medications, prescriptions):
+        lines = []
+
+        if patient_info:
+            p = patient_info[0]
+            lines.append("PATIENT INFORMATION:")
+            lines.append(f"  Name:       {p['first_name']} {p['last_name']}")
+            lines.append(f"  Patient ID: {p['patient_id']}")
+            lines.append(f"  DOB:        {p['dob']}")
+            lines.append(f"  Gender:     {p['gender']}")
+            lines.append(f"  Blood Type: {p['blood_type']}")
 
         if medications:
-            lines.append("CURRENT MEDICATIONS:")
+            lines.append("\nCURRENT MEDICATIONS:")
             for m in medications:
                 lines.append(
                     f"  - {m['medication_name']} {m['dose']} "
@@ -117,7 +123,7 @@ class PharmacyAgent:
         return "\n".join(lines)
 
     def _synthesize_from_tools(self, query: str,
-                                context: str, patient_id: str) -> str:
+                               context: str, patient_id: str) -> str:
         if llm_configured():
             try:
                 return call_llm(
