@@ -224,6 +224,7 @@ if message:
             st.error(f"❌ API error: {exc}")
             st.stop()
 
+
     st.session_state.history.append({
         "request":           message,
         "agents_considered": data.get("agents_considered", []),

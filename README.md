@@ -91,6 +91,7 @@ Each agent has:
 
 ---
 
+
 ## 🔐 RBAC Security Model
 
 | Role | Clinical Agent | Pharmacy Agent | Operations Agent |
