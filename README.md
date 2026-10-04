@@ -1,16 +1,16 @@
-# XinHel — Secure Multi-Agent Healthcare AI Orchestration Platform
+# YCHealth — Secure Multi-Agent Healthcare AI Orchestration Platform
 
-> **Healthcare Disclaimer:** XinHel is a technical proof-of-concept demonstrating secure, role-aware multi-agent AI orchestration. All patient data is 100% synthetic and fictional. This system is **not** intended for clinical decision-making, diagnosis, treatment, or real patient care. It is not HIPAA compliant.
+> **Healthcare Disclaimer:** YCHealth is a technical proof-of-concept demonstrating secure, role-aware multi-agent AI orchestration. All patient data is 100% synthetic and fictional. This system is **not** intended for clinical decision-making, diagnosis, treatment, or real patient care. It is not HIPAA compliant.
 
 ---
 
-## 🏥 What Is XinHel?
+## 🏥 What Is YCHealth?
 
-XinHel is a **secure multi-agent healthcare AI platform** built to demonstrate how production-grade AI systems can handle complex, sensitive data without ever letting the LLM make security decisions.
+YCHealth is a **secure multi-agent healthcare AI platform** built to demonstrate how production-grade AI systems can handle complex, sensitive data without ever letting the LLM make security decisions.
 
 > **"The LLM can suggest. The code decides."**
 
-Most AI demos show a chatbot answering questions. XinHel shows what happens when you enforce **who is allowed to ask what** — before any AI agent ever runs. A deterministic Python policy engine controls all authorization. The LLM handles reasoning and synthesis only.
+Most AI demos show a chatbot answering questions. YCHealth shows what happens when you enforce **who is allowed to ask what** — before any AI agent ever runs. A deterministic Python policy engine controls all authorization. The LLM handles reasoning and synthesis only.
 
 ---
 
@@ -22,7 +22,7 @@ In healthcare, data access is a legal and ethical requirement, not just a featur
 - A doctor should only see their own assigned patients
 - An AI system that lets the LLM decide who gets access is fundamentally broken
 
-**XinHel solves this by separating intent detection from authorization — completely.**
+**YCHealth solves this by separating intent detection from authorization — completely.**
 
 ---
 
@@ -511,4 +511,4 @@ This project is for portfolio and educational purposes. Please do not submit thi
 
 ## ⚕️ Healthcare Disclaimer
 
-XinHel is a technical proof-of-concept only. All clinical and operations content, all patient data, and all knowledge base content is **synthetic and fictional**. It is not intended for and must not be used for clinical decision-making, diagnosis, treatment planning, or any form of real patient care. It does not process real patient data (PHI) and is not represented as HIPAA compliant.
+YCHealth is a technical proof-of-concept only. All clinical and operations content, all patient data, and all knowledge base content is **synthetic and fictional**. It is not intended for and must not be used for clinical decision-making, diagnosis, treatment planning, or any form of real patient care. It does not process real patient data (PHI) and is not represented as HIPAA compliant.
