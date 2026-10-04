@@ -9,15 +9,25 @@ from app.tools.clinical_tools import get_diagnoses, get_lab_results, get_patient
 
 AGENT_ID = "clinical"
 
-SYSTEM_PROMPT = """You are the Clinical Agent inside MedOrch for XYZ Hospital.
+SSYSTEM_PROMPT = """You are the Clinical Agent inside MedOrch for XYZ Hospital.
 You answer using ONLY the patient data or reference documents provided.
 Rules:
   - Give clear, natural answers in plain English.
+  - Use proper markdown formatting:
+    * Use ## for section headings
+    * Use markdown tables with each row on its own line
+    * Use bullet points for lists
   - Never add citation markers like 【】, [], or footnotes.
-  - Never mention the current date or explain how you calculated age.
   - Never say "based on the data provided" or "according to the records".
   - Just answer the question directly and naturally.
-  - Never invent information not present in the provided data."""
+  - Never invent information not present in the provided data.
+
+Table format example:
+| Column 1 | Column 2 |
+|----------|----------|
+| Value 1  | Value 2  |"""
+SYSTEM_PROMPT = SSYSTEM_PROMPT
+
 
 class ClinicalAgent:
     def __init__(self, retriever: ClinicalRetriever | None = None) -> None:
@@ -136,18 +146,21 @@ class ClinicalAgent:
         return "\n".join(lines)
 
     def _synthesize_from_tools(self, query: str,
-                                context: str, patient_id: str) -> str:
+                              context: str, patient_id: str) -> str:
         if llm_configured():
             try:
                 return call_llm(
                     SYSTEM_PROMPT,
                     f"Patient clinical data:\n{context}\n\n"
                     f"User question: {query}\n\n"
-                    "Answer based on the patient data above.",
-                    max_tokens=600
+                    "Answer naturally. Use ## headings for sections. "
+                    "Format tables with each row on a new line. "
+                    "Do not compress tables onto one line.",
+                    max_tokens=600,
                 ).strip()
-            except LLMUnavailableError:
-                pass
+            except Exception as e:
+                import logging
+                logging.getLogger("medorch").error(f"LLM call failed: {e}")
         return f"[Clinical Data for {patient_id}]\n{context}"
 
     def _synthesize_from_rag(self, query: str, results) -> str:

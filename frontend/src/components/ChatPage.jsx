@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { chat } from '../api/medorch'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 const PATIENT_IDS = Array.from({ length: 2000 }, (_, i) => `P${1001 + i}`)
 
 const ROLE_CONFIG = {
-  CLINICIAN:        { label: 'Clinician',        color: 'bg-blue-100 text-blue-700',    access: 'Diagnoses · Lab Results · Pharmacy' },
+  CLINICIAN:        { label: 'Clinician',        color: 'bg-blue-100 text-blue-700',    access: 'Clinical · Pharmacy · Operations' },
   PHARMACIST:       { label: 'Pharmacist',        color: 'bg-purple-100 text-purple-700',access: 'Medications · Prescriptions' },
   OPERATIONS_STAFF: { label: 'Operations Staff',  color: 'bg-amber-100 text-amber-700',  access: 'Appointments · Admissions' },
 }
@@ -19,7 +20,7 @@ function Logo() {
           <rect x="4"  y="13" width="24" height="6"  rx="2" fill="white" />
         </svg>
       </div>
-      <span className="font-bold text-brand-700 text-lg tracking-tight">XinHel</span>
+      <span className="font-bold text-brand-700 text-lg tracking-tight">YCHealth</span>
     </div>
   )
 }
@@ -44,9 +45,10 @@ function StatusBadge({ status }) {
 function MarkdownAnswer({ content }) {
   return (
     <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
       components={{
         table: ({ node, ...props }) => (
-          <div className="overflow-x-auto my-3 rounded-lg border border-brand-100">
+          <div className="overflow-x-auto my-3 rounded-lg border border-brand-100 shadow-sm">
             <table className="w-full text-xs border-collapse" {...props} />
           </div>
         ),
@@ -55,26 +57,29 @@ function MarkdownAnswer({ content }) {
         ),
         th: ({ node, ...props }) => (
           <th className="px-3 py-2.5 text-left font-semibold text-white
-                         text-xs border-r border-brand-300 last:border-r-0" {...props} />
+                         text-xs border-r border-brand-300 last:border-r-0
+                         whitespace-nowrap" {...props} />
         ),
         td: ({ node, ...props }) => (
-          <td className="px-3 py-2 border-t border-brand-100
+          <td className="px-3 py-2.5 border-t border-brand-100
                          border-r border-brand-50 last:border-r-0
                          text-brand-700 text-xs" {...props} />
         ),
         tr: ({ node, ...props }) => (
-          <tr className="even:bg-brand-50 hover:bg-brand-100 transition-colors" {...props} />
+          <tr className="even:bg-brand-50 hover:bg-brand-100
+                         transition-colors" {...props} />
         ),
         h1: ({ node, ...props }) => (
           <h1 className="text-base font-bold text-brand-700 mt-4 mb-2
-                         pb-1 border-b border-brand-100" {...props} />
+                         pb-1 border-b-2 border-brand-200" {...props} />
         ),
         h2: ({ node, ...props }) => (
           <h2 className="text-sm font-bold text-brand-600 mt-4 mb-2
-                         pb-1 border-b border-brand-100 flex items-center gap-2" {...props} />
+                         pb-1 border-b border-brand-100" {...props} />
         ),
         h3: ({ node, ...props }) => (
-          <h3 className="text-sm font-semibold text-brand-600 mt-3 mb-1.5" {...props} />
+          <h3 className="text-sm font-semibold text-brand-500
+                         mt-3 mb-1.5" {...props} />
         ),
         p: ({ node, ...props }) => (
           <p className="text-sm text-brand-700 leading-relaxed mb-2" {...props} />
@@ -82,9 +87,14 @@ function MarkdownAnswer({ content }) {
         ul: ({ node, ...props }) => (
           <ul className="list-none space-y-1.5 mb-3" {...props} />
         ),
+        ol: ({ node, ...props }) => (
+          <ol className="list-decimal list-inside space-y-1.5 mb-3
+                         text-sm text-brand-700" {...props} />
+        ),
         li: ({ node, ...props }) => (
           <li className="text-sm text-brand-700 flex items-start gap-2">
-            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-300 flex-shrink-0" />
+            <span className="mt-1.5 w-1.5 h-1.5 rounded-full
+                             bg-brand-300 flex-shrink-0" />
             <span {...props} />
           </li>
         ),
@@ -105,10 +115,11 @@ function MarkdownAnswer({ content }) {
         code: ({ node, inline, ...props }) =>
           inline ? (
             <code className="bg-brand-50 text-brand-600 px-1.5 py-0.5
-                             rounded text-xs font-mono border border-brand-100" {...props} />
+                             rounded text-xs font-mono
+                             border border-brand-100" {...props} />
           ) : (
-            <pre className="bg-brand-50 border border-brand-100 rounded-lg
-                            p-3 overflow-x-auto my-2">
+            <pre className="bg-brand-50 border border-brand-100
+                            rounded-lg p-3 overflow-x-auto my-2">
               <code className="text-xs font-mono text-brand-600" {...props} />
             </pre>
           ),
@@ -138,6 +149,7 @@ function ChatMessage({ turn }) {
         <div className="max-w-2xl w-full">
           <div className="bg-white border border-brand-100 rounded-2xl
                           rounded-tl-sm shadow-sm overflow-hidden">
+
             {/* Meta bar */}
             <div className="px-4 py-3 bg-brand-50 border-b border-brand-100
                             flex flex-wrap gap-2 items-center">
@@ -169,8 +181,7 @@ function ChatMessage({ turn }) {
                 <button
                   onClick={() => setShowSources(!showSources)}
                   className="text-xs text-brand-300 hover:text-brand-500
-                             font-medium flex items-center gap-1.5
-                             transition-colors"
+                             font-medium flex items-center gap-1.5 transition-colors"
                 >
                   <span>📚</span>
                   {showSources ? 'Hide' : 'Show'} reference sources
@@ -371,9 +382,9 @@ export default function ChatPage({ session, onLogout }) {
               </p>
               <div className="space-y-1.5 text-xs">
                 {[
-                  { role: 'Clinician',  access: 'Clinical + Pharmacy', color: 'bg-blue-50 text-blue-700 border-blue-100' },
-                  { role: 'Pharmacist', access: 'Pharmacy only',        color: 'bg-purple-50 text-purple-700 border-purple-100' },
-                  { role: 'Operations', access: 'Operations only',      color: 'bg-amber-50 text-amber-700 border-amber-100' },
+                  { role: 'Clinician',  access: 'Clinical + Pharmacy + Ops', color: 'bg-blue-50 text-blue-700 border-blue-100' },
+                  { role: 'Pharmacist', access: 'Pharmacy only',              color: 'bg-purple-50 text-purple-700 border-purple-100' },
+                  { role: 'Operations', access: 'Operations only',            color: 'bg-amber-50 text-amber-700 border-amber-100' },
                 ].map(r => (
                   <div key={r.role}
                        className={`px-3 py-2 rounded-lg border flex justify-between ${r.color}`}>
@@ -412,7 +423,7 @@ export default function ChatPage({ session, onLogout }) {
                   </svg>
                 </div>
                 <h3 className="text-brand-700 font-semibold mb-1">
-                  XinHel AI Assistant
+                  YCHealth AI Assistant
                 </h3>
                 <p className="text-brand-300 text-sm max-w-sm mb-6">
                   {patientId
@@ -514,7 +525,7 @@ export default function ChatPage({ session, onLogout }) {
               </button>
             </form>
             <p className="mt-2 text-xs text-brand-200 text-center">
-              XinHel AI · Demo environment · Not for clinical decision-making
+              YCHealth AI · Demo environment · Not for clinical decision-making
             </p>
           </div>
         </main>

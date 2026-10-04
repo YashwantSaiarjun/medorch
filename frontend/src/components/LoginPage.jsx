@@ -90,7 +90,7 @@ function HospitalIllustration() {
   )
 }
 
-function XinHelLogo({ size = 'lg' }) {
+function YCHealthLogo({ size = 'lg' }) {
   const big = size === 'lg'
   return (
     <div className={`flex items-center gap-3 ${big ? 'mb-2' : ''}`}>
@@ -107,7 +107,7 @@ function XinHelLogo({ size = 'lg' }) {
       <div>
         <h1 className={`${big ? 'text-3xl' : 'text-xl'}
                         font-bold text-brand-700 leading-none tracking-tight`}>
-          XinHel
+          YCHealth
         </h1>
         {big && (
           <p className="text-brand-300 text-sm font-medium tracking-widest uppercase mt-0.5">
@@ -168,7 +168,7 @@ export default function LoginPage({ onLogin }) {
           ))}
         </div>
 
-        <XinHelLogo size="lg" />
+        <YCHealthLogo size="lg" />
 
         <div className="mt-8 w-full max-w-sm relative z-10">
           <HospitalIllustration />
@@ -177,7 +177,7 @@ export default function LoginPage({ onLogin }) {
         <div className="mt-8 text-center relative z-10">
           <p className="text-white/80 text-sm max-w-xs leading-relaxed">
             Secure, role-aware AI orchestration for healthcare professionals.
-            Powered by XinHel.
+            Powered by YCHealth.
           </p>
         </div>
 
@@ -193,7 +193,7 @@ export default function LoginPage({ onLogin }) {
 
           {/* Mobile logo */}
           <div className="lg:hidden mb-8 flex justify-center">
-            <XinHelLogo size="lg" />
+            <YCHealthLogo size="lg" />
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl
@@ -203,7 +203,7 @@ export default function LoginPage({ onLogin }) {
               Welcome back
             </h2>
             <p className="text-brand-300 text-sm mb-8">
-              Sign in to access the XinHel AI Platform
+              Sign in to access the YCHealth AI Platform
             </p>
 
             <form onSubmit={handleLogin} className="space-y-5">
@@ -324,7 +324,7 @@ export default function LoginPage({ onLogin }) {
           </div>
 
           <p className="mt-6 text-center text-xs text-brand-200">
-            XinHel AI Platform · Demo Environment · Not for clinical use
+            YCHealth AI Platform · Demo Environment · Not for clinical use
           </p>
         </div>
       </div>

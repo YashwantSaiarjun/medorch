@@ -6,16 +6,26 @@ from app.llm.client import LLMUnavailableError, call_llm, llm_configured
 
 # ── Intent classification (domain: clinical / pharmacy / operations) ────────
 
-_SYSTEM_PROMPT = """You are the intent classifier for MedOrch hospital AI.
+_SYSTEM_PROMPT = """You are the intent classifier for a hospital AI system.
 Classify the user request into one or more domains.
 
 Domains:
-- "clinical"   : diagnoses, lab results, clinical assessment, treatment
-- "pharmacy"   : medications, prescriptions, drug safety, reconciliation
-- "operations" : appointments, admissions, scheduling, hospital workflows
+- "clinical"   : diagnoses, lab results, clinical assessment, treatment,
+                 patient name, patient age, patient details, patient info,
+                 blood type, gender, date of birth, who is the patient
+- "pharmacy"   : medications, prescriptions, drug safety, reconciliation,
+                 what medications, current medications, active medications
+- "operations" : appointments, admissions, scheduling, ward, discharge
+
+IMPORTANT RULES:
+- Questions about patient name, age, DOB, gender, blood type = "clinical" only
+- Questions about medications = "pharmacy" only
+- Questions about appointments or admissions = "operations" only
+- NEVER classify patient info questions as "operations"
+- A question can belong to multiple domains if it spans them
 
 Respond ONLY with JSON:
-{"agents": ["clinical"], "reasoning": "brief reason"}
+{"agents": ["pharmacy"], "reasoning": "brief reason"}
 No prose outside the JSON."""
 
 _KEYWORDS = {
@@ -23,24 +33,21 @@ _KEYWORDS = {
                          "disease", "condition", "treatment", "hypertension",
                          "age", "how old", "dob", "date of birth", "born",
                          "blood type", "gender", "details", "information",
-                         "tell me about", "show me", "what is the patient",
-                         "patient name", "patient info", "who is"],
+                         "patient name", "patient info", "who is", "name",
+                         "tell me about", "show me", "what is the patient"],
 
     AgentId.PHARMACY:   ["medic", "prescription", "drug", "pharmacy",
                          "pharmacist", "reconciliation", "dose", "tablet",
                          "capsule", "injection", "medication", "medicine",
                          "patient name", "patient info", "who is", "name",
                          "age", "how old", "dob", "date of birth", "born",
-                         "blood type", "gender", "details"],
+                         "blood type", "gender"],
 
     AgentId.OPERATIONS: ["appointment", "admission", "admit",
                          "schedule", "ward", "discharge", "booking",
                          "visit", "admitted", "hospital stay",
-                         "patient name", "patient info", "who is", "name",
-                         "age", "how old", "dob", "date of birth", "born",
-                         "blood type", "gender", "details"],
+                         "is the patient admitted", "when is the appointment"],
 }
-
 @dataclass(frozen=True)
 class IntentResult:
     agents: tuple[AgentId, ...]
@@ -67,12 +74,22 @@ def classify_intent_llm(message: str) -> IntentResult:
     parsed = json.loads(match.group(0))
     valid  = {a.value for a in AgentId}
     agents = tuple(AgentId(a) for a in parsed.get("agents", []) if a in valid)
+
+    # Safety correction: patient info questions should never route
+    # to operations alone
+    text = message.lower()
+    patient_info_only = any(w in text for w in [
+        "patient name", "what is the name", "who is",
+        "how old", "patient age", "date of birth", "blood type"
+    ])
+    if patient_info_only and agents == (AgentId.OPERATIONS,):
+        agents = (AgentId.CLINICAL,)
+
     return IntentResult(
         agents=agents,
         reasoning=parsed.get("reasoning", ""),
         source="llm"
     )
-
 
 def classify_intent(message: str) -> IntentResult:
     if llm_configured():

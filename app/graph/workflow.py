@@ -175,8 +175,11 @@ def aggregate_results(state: MedOrchState) -> dict:
             for src in res.get("sources", []):
                 citations.append({"agent": agent_id, **src})
 
+    # Only show denial message if user explicitly asked for that domain
+    # not just because generic keywords like "name" matched everything
     denied = state.get("denied_agents", [])
-    if denied:
+    authorized = state.get("authorized_agents", [])
+    if denied and len(authorized) == 0:
         names = ", ".join(_DISPLAY.get(a, a) for a in denied)
         sections.append(f"(Access denied for: {names})")
 
