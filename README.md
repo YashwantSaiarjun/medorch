@@ -216,8 +216,80 @@ General question → RAG → Knowledge Docs → Cited Answer
 
 ## 📁 Project Structure
 
+        ↓
+
+Final response returned
 ```
+
+---
+
+## Scenario 5 — Restricted User
+
+**Role**
+
+```text
+RESTRICTED
+```
+
+**Request**
+
+```text
+Give me information about hypertension.
+```
+
+**Expected**
+
+```text
+Authorization → DENIED
+Clinical Agent → NOT executed
+Operations Agent → NOT executed
+```
+
+---
+
+# 🧰 Technology Stack
+
+### AI / Agent Architecture
+
+* Python 3.11+
+* LangGraph
+* LLM-based intent classification
+* RAG
+* Embeddings
+
+### Backend
+
+* FastAPI
+* Pydantic
+
+### Data & Retrieval
+
+* PostgreSQL
+* pgvector
+* Isolated knowledge bases
+* Synthetic JSON knowledge documents
+* In-memory vector-store fallback for local development and testing
+
+### Frontend
+
+* Streamlit
+
+### Infrastructure
+
+* Docker
+* Docker Compose
+
+### Testing
+
+* pytest
+
+---
+
+# 📁 Project Structure
+
+```text
 medorch/
+│
 ├── app/
 │   ├── api/
 │   │   └── routes.py              # FastAPI endpoints + login
