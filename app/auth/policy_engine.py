@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 from app.auth.models import AgentId, AuthDecision, Role
 
 _PERMISSION_MATRIX: dict[Role, set[AgentId]] = {
-    Role.CLINICIAN:        {AgentId.CLINICAL},
+    Role.CLINICIAN:        {AgentId.CLINICAL, AgentId.PHARMACY, AgentId.OPERATIONS},
     Role.PHARMACIST:       {AgentId.PHARMACY},
     Role.OPERATIONS_STAFF: {AgentId.OPERATIONS},
 }

@@ -186,20 +186,27 @@ class OperationsAgent:
         return "\n".join(lines)
 
     def _synthesize_from_tools(self, query: str,
-                                context: str,
-                                patient_id: str) -> str:
+                            context: str,
+                            patient_id: str) -> str:
         if llm_configured():
             try:
                 return call_llm(
                     SYSTEM_PROMPT,
                     f"Patient operations data:\n{context}\n\n"
                     f"User question: {query}\n\n"
-                    "Answer based on the patient data above.",
-                    max_tokens=600
+                    "Answer naturally in plain English using proper markdown:\n"
+                    "- Use ## for section headings\n"
+                    "- Format tables with each row on its own line\n"
+                    "- Never show raw data labels like 'PATIENT INFORMATION:'\n"
+                    "- Start with a brief patient introduction\n"
+                    "- Then show appointments and admissions in clean tables",
+                    max_tokens=700
                 ).strip()
-            except LLMUnavailableError:
-                pass
-        return f"[Operations Data for {patient_id}]\n{context}"
+            except Exception as e:
+                print(f"DEBUG operations LLM error: {type(e).__name__}: {e}")
+
+        print("DEBUG: falling back to template")
+        return f"[Clinical Data for {patient_id}]\n{context}"
 
     def _synthesize_from_rag(self, query: str, results) -> str:
         context = "\n\n".join(

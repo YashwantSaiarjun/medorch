@@ -14,10 +14,21 @@ SYSTEM_PROMPT = """You are the Pharmacy Agent inside MedOrch for XYZ Hospital.
 You answer using ONLY the patient medication data or pharmacy documents provided.
 Rules:
   - Give clear, natural answers in plain English.
+  - Use proper markdown formatting:
+    * Use ## for section headings
+    * Always put each table row on its own separate line
+    * Never compress a table onto one line
+    * Use bullet points for simple lists
   - Never add citation markers like 【】, [], or footnotes.
   - Never say "based on the data provided" or "according to the records".
   - Just answer the question directly and naturally.
-  - Never invent information not present in the provided data."""
+  - Never invent information not present in the provided data.
+
+Correct table format:
+## Medications
+| Medication | Dose | Frequency | Status |
+|------------|------|-----------|--------|
+| Aspirin    | 75mg | Once daily| Active |"""
 
 
 class PharmacyAgent:
@@ -123,19 +134,22 @@ class PharmacyAgent:
         return "\n".join(lines)
 
     def _synthesize_from_tools(self, query: str,
-                               context: str, patient_id: str) -> str:
+                            context: str, patient_id: str) -> str:
         if llm_configured():
             try:
                 return call_llm(
                     SYSTEM_PROMPT,
                     f"Patient pharmacy data:\n{context}\n\n"
                     f"User question: {query}\n\n"
-                    "Answer based on the patient data above.",
-                    max_tokens=600
+                    "Answer naturally. Use ## headings for sections. "
+                    "Format tables with each row on a new line. "
+                    "Do not compress tables onto one line.",
+                    max_tokens=600,
                 ).strip()
-            except LLMUnavailableError:
-                pass
-        return f"[Pharmacy Data for {patient_id}]\n{context}"
+            except Exception as e:
+                import logging
+                logging.getLogger("medorch").error(f"LLM call failed: {e}")
+        return f"[Clinical Data for {patient_id}]\n{context}"
 
     def _synthesize_from_rag(self, query: str, results) -> str:
         context = "\n\n".join(
@@ -149,7 +163,7 @@ class PharmacyAgent:
                     f"Pharmacy reference documents:\n{context}\n\n"
                     f"User question: {query}\n\n"
                     "Answer using only the documents above, cite doc_ids.",
-                    max_tokens=500
+                    max_tokens=500,
                 ).strip()
             except LLMUnavailableError:
                 pass
