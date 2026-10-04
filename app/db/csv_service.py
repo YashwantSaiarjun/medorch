@@ -25,6 +25,7 @@ def _read_csv(filename: str) -> list[dict]:
 @lru_cache(maxsize=1)
 def _load_all() -> dict[str, list[dict]]:
     """Load all CSVs once into memory at startup."""
+    
     return {
         "patients":      _read_csv("patients.csv"),
         "diagnoses":     _read_csv("diagnoses.csv"),
